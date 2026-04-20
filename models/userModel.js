@@ -3,8 +3,9 @@ const db = require('../config/db');
 // ================= CREATE USER =================
 const createUser = (userData, callback) => {
     const sql = `
-        INSERT INTO users (first_name, last_name, email, password, address, gender)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO users 
+        (first_name, last_name, email, password, address, gender, role, provider)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(sql, [
@@ -13,14 +14,19 @@ const createUser = (userData, callback) => {
         userData.email,
         userData.password,
         userData.address,
-        userData.gender
+        userData.gender,
+        userData.role || 'user',
+        'local'
     ], callback);
 };
 
+
+// ================= GOOGLE USER =================
 const createGoogleUser = (userData, callback) => {
     const sql = `
-        INSERT INTO users (first_name, last_name, email, password, address, gender, provider)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users 
+        (first_name, last_name, email, password, address, gender, role, provider)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(sql, [
@@ -30,15 +36,31 @@ const createGoogleUser = (userData, callback) => {
         null,
         userData.address || '',
         userData.gender || 'Male',
+        'user',
         'google'
     ], callback);
 };
 
+
 // ================= FIND USER =================
 const findUserByEmail = (email, callback) => {
-    const sql = `SELECT * FROM users WHERE email = ?`;
-    db.query(sql, [email], callback);
+    db.query(
+        'SELECT * FROM users WHERE email = ?',
+        [email],
+        callback
+    );
 };
+
+
+// ================= FIND ADMIN =================
+const findAdminByEmail = (email, callback) => {
+    db.query(
+        'SELECT * FROM users WHERE email = ? AND role = "admin"',
+        [email],
+        callback
+    );
+};
+
 
 // ================= SAVE OTP =================
 const saveOTP = (email, otp, expiry, callback) => {
@@ -49,20 +71,26 @@ const saveOTP = (email, otp, expiry, callback) => {
     );
 };
 
-// ================= VERIFY OTP =================
+
+// ================= VERIFY OTP (IMPROVED) =================
 const verifyOTP = (email, otp, callback) => {
     db.query(
-        'SELECT * FROM users WHERE email = ? AND otp = ?',
+        `SELECT * FROM users 
+         WHERE email = ? 
+         AND otp = ? 
+         AND otp_expiry > NOW()`,
         [email, otp],
         callback
     );
 };
 
+
 // ================= EXPORT =================
 module.exports = {
     createUser,
+    createGoogleUser,
     findUserByEmail,
-    saveOTP,      
-    verifyOTP,
-    createGoogleUser
+    findAdminByEmail,
+    saveOTP,
+    verifyOTP
 };

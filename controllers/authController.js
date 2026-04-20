@@ -1,12 +1,15 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');    
+const jwt = require('jsonwebtoken');
 
-const { 
+const client = require('../config/google');
+
+const {
     createUser,
-    createGoogleUser, 
-    findUserByEmail, 
-    saveOTP, 
-    verifyOTP 
+    createGoogleUser,
+    findUserByEmail,
+    findAdminByEmail,
+    saveOTP,
+    verifyOTP
 } = require('../models/userModel');
 
 const { hashPassword } = require('../utils/hash');
@@ -17,17 +20,10 @@ const { sendOTPEmail } = require('../config/mail');
 // ================= REGISTER =================
 const registerUser = async (req, res) => {
     try {
-        const {
-            first_name,
-            last_name,
-            email,
-            password,
-            address,
-            gender
-        } = req.body;
+        const { first_name, last_name, email, password, address, gender } = req.body;
 
         findUserByEmail(email, async (err, result) => {
-            if (err) return res.status(500).json(err);
+            if (err) return res.status(500).json({ message: 'Database error' });
 
             if (result.length > 0) {
                 return res.status(400).json({ message: 'Email already exists' });
@@ -43,48 +39,39 @@ const registerUser = async (req, res) => {
                 address,
                 gender
             }, (err) => {
-                if (err) return res.status(500).json(err);
+                if (err) return res.status(500).json({ message: 'Failed to register' });
 
-                res.status(201).json({
-                    message: 'User registered successfully'
-                });
+                res.status(201).json({ message: 'User registered successfully' });
             });
         });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
+
 
 // ================= GOOGLE LOGIN =================
 const googleLogin = async (req, res) => {
     try {
         const { token } = req.body;
 
-        // Verify token with Google
         const ticket = await client.verifyIdToken({
             idToken: token,
             audience: process.env.GOOGLE_CLIENT_ID
         });
 
         const payload = ticket.getPayload();
+        const { email, given_name, family_name } = payload;
 
-        const {
-            email,
-            given_name,
-            family_name
-        } = payload;
-
-        // Check if user exists
         findUserByEmail(email, (err, result) => {
-            if (err) return res.status(500).json(err);
+            if (err) return res.status(500).json({ message: 'Database error' });
 
             if (result.length > 0) {
-                // Existing user → login
                 const user = result[0];
 
                 const jwtToken = jwt.sign(
-                    { id: user.id, email: user.email },
+                    { id: user.id, email: user.email, role: user.role || 'user' },
                     process.env.JWT_SECRET,
                     { expiresIn: '1d' }
                 );
@@ -95,16 +82,15 @@ const googleLogin = async (req, res) => {
                 });
             }
 
-            // New user → register
             createGoogleUser({
                 first_name: given_name,
                 last_name: family_name,
                 email
             }, (err, result) => {
-                if (err) return res.status(500).json(err);
+                if (err) return res.status(500).json({ message: 'Failed to create user' });
 
                 const jwtToken = jwt.sign(
-                    { email },
+                    { email, role: 'user' },
                     process.env.JWT_SECRET,
                     { expiresIn: '1d' }
                 );
@@ -117,19 +103,17 @@ const googleLogin = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(401).json({
-            message: 'Invalid Google token'
-        });
+        res.status(401).json({ message: 'Invalid Google token' });
     }
 };
 
 
-// ================= LOGIN STEP 1 =================
+// ================= USER LOGIN STEP 1 =================
 const loginUser = (req, res) => {
     const { email, password } = req.body;
 
     findUserByEmail(email, async (err, result) => {
-        if (err) return res.status(500).json(err);
+        if (err) return res.status(500).json({ message: 'Database error' });
 
         if (result.length === 0) {
             return res.status(404).json({ message: 'User not found' });
@@ -138,7 +122,6 @@ const loginUser = (req, res) => {
         const user = result[0];
 
         const isMatch = await bcrypt.compare(password, user.password);
-
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid password' });
         }
@@ -147,30 +130,22 @@ const loginUser = (req, res) => {
         const expiry = new Date(Date.now() + 5 * 60 * 1000);
 
         saveOTP(email, otp, expiry, async (err) => {
-            if (err) return res.status(500).json(err);
+            if (err) return res.status(500).json({ message: 'Failed to save OTP' });
 
-            try {
-                await sendOTPEmail(email, user.first_name, otp);
+            await sendOTPEmail(email, user.first_name, otp);
 
-                res.json({
-                    message: 'OTP sent to email'
-                });
-            } catch (mailError) {
-                res.status(500).json({
-                    message: 'Failed to send OTP email'
-                });
-            }
+            res.json({ message: 'OTP sent to email' });
         });
     });
 };
 
 
-// ================= LOGIN STEP 2 =================
+// ================= USER VERIFY OTP =================
 const verifyUserOTP = (req, res) => {
     const { email, otp } = req.body;
 
     verifyOTP(email, otp, (err, result) => {
-        if (err) return res.status(500).json(err);
+        if (err) return res.status(500).json({ message: 'Database error' });
 
         if (result.length === 0) {
             return res.status(400).json({ message: 'Invalid OTP' });
@@ -178,27 +153,123 @@ const verifyUserOTP = (req, res) => {
 
         const user = result[0];
 
-        // Check expiry
         if (new Date(user.otp_expiry) < new Date()) {
             return res.status(400).json({ message: 'OTP expired' });
         }
 
-        // 🔥 CLEAR OTP AFTER SUCCESS
         saveOTP(email, null, null, () => {});
 
-        // Generate token
         const token = jwt.sign(
-            { id: user.id, email: user.email },
+            { id: user.id, email: user.email, role: user.role || 'user' },
             process.env.JWT_SECRET,
             { expiresIn: '1d' }
         );
 
-        res.json({
-            message: 'Login successful',
-            token
+        res.json({ message: 'Login successful', token });
+    });
+};
+
+
+// ================= ADMIN LOGIN STEP 1 =================
+const adminLogin = (req, res) => {
+    const { email, password } = req.body;
+
+    findAdminByEmail(email, async (err, result) => {
+        if (err) return res.status(500).json({ message: 'Database error' });
+
+        if (result.length === 0) {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+
+        const admin = result[0];
+
+        const isMatch = await bcrypt.compare(password, admin.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid password' });
+        }
+
+        const otp = generateOTP();
+        const expiry = new Date(Date.now() + 5 * 60 * 1000);
+
+        saveOTP(email, otp, expiry, async (err) => {
+            if (err) return res.status(500).json({ message: 'Failed to save OTP' });
+
+            await sendOTPEmail(email, admin.first_name, otp);
+
+            res.json({ message: 'OTP sent to admin email' });
         });
     });
 };
 
 
-module.exports = { registerUser, googleLogin,loginUser, verifyUserOTP };
+// ================= ADMIN VERIFY OTP =================
+const verifyAdminOTP = (req, res) => {
+    const { email, otp } = req.body;
+
+    verifyOTP(email, otp, (err, result) => {
+        if (err) return res.status(500).json({ message: 'Database error' });
+
+        if (result.length === 0) {
+            return res.status(400).json({ message: 'Invalid OTP' });
+        }
+
+        const admin = result[0];
+
+        if (admin.role !== 'admin') {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        if (new Date(admin.otp_expiry) < new Date()) {
+            return res.status(400).json({ message: 'OTP expired' });
+        }
+
+        saveOTP(email, null, null, () => {});
+
+        const token = jwt.sign(
+            { id: admin.id, email: admin.email, role: 'admin' },
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' }
+        );
+
+        res.json({ message: 'Admin login successful', token });
+    });
+};
+
+
+// ================= RESEND ADMIN OTP =================
+const resendAdminOTP = (req, res) => {
+    const { email } = req.body;
+
+    findAdminByEmail(email, async (err, result) => {
+        if (err) return res.status(500).json({ message: 'Database error' });
+
+        if (result.length === 0) {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+
+        const admin = result[0];
+
+        const otp = generateOTP();
+        const expiry = new Date(Date.now() + 5 * 60 * 1000);
+
+        saveOTP(email, otp, expiry, async (err) => {
+            if (err) return res.status(500).json({ message: 'Failed to save OTP' });
+
+            await sendOTPEmail(email, admin.first_name, otp);
+
+            res.json({ message: 'New OTP sent' });
+        });
+    });
+};
+
+
+// ================= EXPORT =================
+module.exports = {
+    registerUser,
+    googleLogin,
+    loginUser,
+    verifyUserOTP,
+    adminLogin,
+    verifyAdminOTP,
+    resendAdminOTP
+};
