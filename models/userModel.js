@@ -17,6 +17,23 @@ const createUser = (userData, callback) => {
     ], callback);
 };
 
+const createGoogleUser = (userData, callback) => {
+    const sql = `
+        INSERT INTO users (first_name, last_name, email, password, address, gender, provider)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(sql, [
+        userData.first_name,
+        userData.last_name,
+        userData.email,
+        null,
+        userData.address || '',
+        userData.gender || 'Male',
+        'google'
+    ], callback);
+};
+
 // ================= FIND USER =================
 const findUserByEmail = (email, callback) => {
     const sql = `SELECT * FROM users WHERE email = ?`;
@@ -46,5 +63,6 @@ module.exports = {
     createUser,
     findUserByEmail,
     saveOTP,      
-    verifyOTP
+    verifyOTP,
+    createGoogleUser
 };

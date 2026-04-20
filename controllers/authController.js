@@ -2,7 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');    
 
 const { 
-    createUser, 
+    createUser,
+    createGoogleUser, 
     findUserByEmail, 
     saveOTP, 
     verifyOTP 
@@ -52,6 +53,73 @@ const registerUser = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+// ================= GOOGLE LOGIN =================
+const googleLogin = async (req, res) => {
+    try {
+        const { token } = req.body;
+
+        // Verify token with Google
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+
+        const {
+            email,
+            given_name,
+            family_name
+        } = payload;
+
+        // Check if user exists
+        findUserByEmail(email, (err, result) => {
+            if (err) return res.status(500).json(err);
+
+            if (result.length > 0) {
+                // Existing user → login
+                const user = result[0];
+
+                const jwtToken = jwt.sign(
+                    { id: user.id, email: user.email },
+                    process.env.JWT_SECRET,
+                    { expiresIn: '1d' }
+                );
+
+                return res.json({
+                    message: 'Google login successful',
+                    token: jwtToken
+                });
+            }
+
+            // New user → register
+            createGoogleUser({
+                first_name: given_name,
+                last_name: family_name,
+                email
+            }, (err, result) => {
+                if (err) return res.status(500).json(err);
+
+                const jwtToken = jwt.sign(
+                    { email },
+                    process.env.JWT_SECRET,
+                    { expiresIn: '1d' }
+                );
+
+                res.json({
+                    message: 'Google account created and logged in',
+                    token: jwtToken
+                });
+            });
+        });
+
+    } catch (error) {
+        res.status(401).json({
+            message: 'Invalid Google token'
+        });
     }
 };
 
@@ -133,4 +201,4 @@ const verifyUserOTP = (req, res) => {
 };
 
 
-module.exports = { registerUser, loginUser, verifyUserOTP };
+module.exports = { registerUser, googleLogin,loginUser, verifyUserOTP };
