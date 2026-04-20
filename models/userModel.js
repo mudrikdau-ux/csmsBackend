@@ -61,6 +61,15 @@ const findAdminByEmail = (email, callback) => {
     );
 };
 
+const findStaffByEmail = (email, callback) => {
+    const sql = `
+        SELECT * FROM users 
+        WHERE email = ? AND role = 'staff'
+    `;
+
+    db.query(sql, [email], callback);
+};
+
 
 // ================= SAVE OTP =================
 const saveOTP = (email, otp, expiry, callback) => {
@@ -91,6 +100,7 @@ module.exports = {
     createGoogleUser,
     findUserByEmail,
     findAdminByEmail,
+    findStaffByEmail,
     saveOTP,
     verifyOTP
 };

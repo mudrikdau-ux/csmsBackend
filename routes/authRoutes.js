@@ -5,6 +5,7 @@ const {
     registerUser,
     adminLogin,
     verifyAdminOTP,
+    staffLogin,
     googleLogin,
     loginUser,
     verifyUserOTP,
@@ -29,6 +30,8 @@ router.post('/admin/login', adminLogin);
 router.post('/admin/verify-otp', verifyAdminOTP);
 router.post('/admin/resend-otp', resendAdminOTP);
 
+// ================= STAFF AUTH =================
+router.post('/staff/login', staffLogin);
 
 // ================= EXPORT =================
 module.exports = router;

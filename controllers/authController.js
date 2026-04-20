@@ -8,6 +8,7 @@ const {
     createGoogleUser,
     findUserByEmail,
     findAdminByEmail,
+    findStaffByEmail,
     saveOTP,
     verifyOTP
 } = require('../models/userModel');
@@ -262,11 +263,55 @@ const resendAdminOTP = (req, res) => {
     });
 };
 
+// ================= STAFF LOGIN =================
+const staffLogin = (req, res) => {
+    const { email, password } = req.body;
+
+    findStaffByEmail(email, async (err, result) => {
+        if (err) {
+            return res.status(500).json({ message: 'Database error' });
+        }
+
+        if (result.length === 0) {
+            return res.status(404).json({ message: 'Staff not found' });
+        }
+
+        const staff = result[0];
+
+        const isMatch = await bcrypt.compare(password, staff.password);
+
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        const token = jwt.sign(
+            {
+                id: staff.id,
+                email: staff.email,
+                role: staff.role
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' }
+        );
+
+        res.json({
+            message: 'Staff login successful',
+            token,
+            staff: {
+                id: staff.id,
+                name: staff.first_name,
+                email: staff.email
+            }
+        });
+    });
+};
+
 
 // ================= EXPORT =================
 module.exports = {
     registerUser,
     googleLogin,
+    staffLogin,
     loginUser,
     verifyUserOTP,
     adminLogin,
