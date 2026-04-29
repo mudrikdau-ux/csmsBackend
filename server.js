@@ -16,11 +16,13 @@ app.use(express.json());
 const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const adminStaffRoutes = require('./routes/adminStaffRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/admin-staff', adminStaffRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Server
 const PORT = process.env.PORT || 5000;

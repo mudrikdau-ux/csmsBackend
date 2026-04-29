@@ -24,8 +24,6 @@ const registerUser = async (req, res) => {
         const { first_name, last_name, email, password, address, gender } = req.body;
 
         findUserByEmail(email, async (err, result) => {
-            if (err) return res.status(500).json({ message: 'Database error' });
-
             if (result.length > 0) {
                 return res.status(400).json({ message: 'Email already exists' });
             }
@@ -39,9 +37,7 @@ const registerUser = async (req, res) => {
                 password: hashedPassword,
                 address,
                 gender
-            }, (err) => {
-                if (err) return res.status(500).json({ message: 'Failed to register' });
-
+            }, () => {
                 res.status(201).json({ message: 'User registered successfully' });
             });
         });
@@ -268,10 +264,6 @@ const staffLogin = (req, res) => {
     const { email, password } = req.body;
 
     findStaffByEmail(email, async (err, result) => {
-        if (err) {
-            return res.status(500).json({ message: 'Database error' });
-        }
-
         if (result.length === 0) {
             return res.status(404).json({ message: 'Staff not found' });
         }
@@ -279,7 +271,6 @@ const staffLogin = (req, res) => {
         const staff = result[0];
 
         const isMatch = await bcrypt.compare(password, staff.password);
-
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
@@ -288,7 +279,8 @@ const staffLogin = (req, res) => {
             {
                 id: staff.id,
                 email: staff.email,
-                role: staff.role
+                role: staff.role,
+                staff_type: staff.staff_type // 🔥 NEW
             },
             process.env.JWT_SECRET,
             { expiresIn: '1d' }
@@ -300,10 +292,16 @@ const staffLogin = (req, res) => {
             staff: {
                 id: staff.id,
                 name: staff.first_name,
-                email: staff.email
+                email: staff.email,
+                type: staff.staff_type // 🔥 NEW
             }
         });
     });
+};
+
+module.exports = {
+    registerUser,
+    staffLogin
 };
 
 

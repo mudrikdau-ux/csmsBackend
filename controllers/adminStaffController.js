@@ -1,15 +1,16 @@
 const bcrypt = require('bcryptjs');
 
 const {
+    findUserByEmail,
     createStaff,
     getAllStaff,
     getStaffById,
     updateStaff,
     deleteStaff
-} = require('../models/adminStaffModel');
+} = require('../models/userModel');
 
 
-// Helper: image URL
+// Image helper
 const getPhotoUrl = (req, filename) => {
     if (!filename) return null;
     return `${req.protocol}://${req.get('host')}/uploads/staff/${filename}`;
@@ -19,7 +20,7 @@ const getPhotoUrl = (req, filename) => {
 // ================= ADD STAFF =================
 const addStaff = async (req, res) => {
     try {
-        const { full_name, email, phone, password } = req.body;
+        const { full_name, email, phone, password, staff_type } = req.body;
 
         if (!full_name || !email || !password) {
             return res.status(400).json({
@@ -27,26 +28,36 @@ const addStaff = async (req, res) => {
             });
         }
 
-        // Split name
-        const names = full_name.split(' ');
-        const first_name = names[0];
-        const last_name = names.slice(1).join(' ') || '';
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const photo = req.file ? req.file.filename : null;
-
-        createStaff({
-            first_name,
-            last_name,
-            email,
-            password: hashedPassword,
-            phone,
-            photo
-        }, (err) => {
+        // 🔥 CHECK IF EMAIL EXISTS
+        findUserByEmail(email, async (err, result) => {
             if (err) return res.status(500).json(err);
 
-            res.status(201).json({
-                message: 'Staff added successfully'
+            if (result.length > 0) {
+                return res.status(400).json({
+                    message: 'Email already exists'
+                });
+            }
+
+            // Split name
+            const names = full_name.split(' ');
+            const first_name = names[0];
+            const last_name = names.slice(1).join(' ') || '';
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const photo = req.file ? req.file.filename : null;
+
+            createStaff({
+                first_name,
+                last_name,
+                email,
+                password: hashedPassword,
+                phone,
+                photo,
+                staff_type
+            }, (err) => {
+                if (err) return res.status(500).json(err);
+
+                res.json({ message: 'Staff added successfully' });
             });
         });
 
@@ -56,103 +67,83 @@ const addStaff = async (req, res) => {
 };
 
 
-// ================= GET ALL STAFF =================
+// ================= GET STAFF =================
 const getStaff = (req, res) => {
     getAllStaff((err, result) => {
-        if (err) return res.status(500).json(err);
-
-        const staffList = result.map(staff => ({
-            ...staff,
-            full_name: `${staff.first_name} ${staff.last_name}`,
-            photo: getPhotoUrl(req, staff.photo)
+        const list = result.map(s => ({
+            ...s,
+            full_name: `${s.first_name} ${s.last_name}`,
+            photo: getPhotoUrl(req, s.photo)
         }));
 
-        res.json(staffList);
+        res.json(list);
     });
 };
 
 
-// ================= GET SINGLE STAFF =================
+// ================= GET ONE =================
 const getSingleStaff = (req, res) => {
     const { id } = req.params;
 
     getStaffById(id, (err, result) => {
-        if (err) return res.status(500).json(err);
-
         if (result.length === 0) {
-            return res.status(404).json({ message: 'Staff not found' });
+            return res.status(404).json({ message: 'Not found' });
         }
 
-        const staff = result[0];
+        const s = result[0];
 
-        staff.full_name = `${staff.first_name} ${staff.last_name}`;
-        staff.photo = getPhotoUrl(req, staff.photo);
-
-        res.json(staff);
+        res.json({
+            ...s,
+            full_name: `${s.first_name} ${s.last_name}`,
+            photo: getPhotoUrl(req, s.photo)
+        });
     });
 };
 
 
-// ================= UPDATE STAFF =================
+// ================= UPDATE =================
 const editStaff = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { full_name, email, phone, password } = req.body;
+    const { id } = req.params;
+    const { full_name, email, phone, password, staff_type } = req.body;
 
-        const photo = req.file ? req.file.filename : null;
+    const photo = req.file ? req.file.filename : null;
 
-        getStaffById(id, async (err, result) => {
-            if (err) return res.status(500).json(err);
+    getStaffById(id, async (err, result) => {
+        const existing = result[0];
 
-            if (result.length === 0) {
-                return res.status(404).json({ message: 'Staff not found' });
-            }
+        let first_name = existing.first_name;
+        let last_name = existing.last_name;
 
-            const existing = result[0];
+        if (full_name) {
+            const names = full_name.split(' ');
+            first_name = names[0];
+            last_name = names.slice(1).join(' ');
+        }
 
-            let first_name = existing.first_name;
-            let last_name = existing.last_name;
+        let hashedPassword = existing.password;
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
 
-            if (full_name) {
-                const names = full_name.split(' ');
-                first_name = names[0];
-                last_name = names.slice(1).join(' ');
-            }
-
-            let hashedPassword = existing.password;
-
-            if (password) {
-                hashedPassword = await bcrypt.hash(password, 10);
-            }
-
-            updateStaff(id, {
-                first_name,
-                last_name,
-                email: email || existing.email,
-                phone: phone || existing.phone,
-                password: hashedPassword,
-                photo: photo || existing.photo
-            }, (err) => {
-                if (err) return res.status(500).json(err);
-
-                res.json({ message: 'Staff updated successfully' });
-            });
+        updateStaff(id, {
+            first_name,
+            last_name,
+            email: email || existing.email,
+            phone: phone || existing.phone,
+            password: hashedPassword,
+            photo: photo || existing.photo,
+            staff_type: staff_type || existing.staff_type
+        }, () => {
+            res.json({ message: 'Updated successfully' });
         });
-
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+    });
 };
 
 
-// ================= DELETE STAFF =================
+// ================= DELETE =================
 const removeStaff = (req, res) => {
-    const { id } = req.params;
-
-    deleteStaff(id, (err) => {
-        if (err) return res.status(500).json(err);
-
-        res.json({ message: 'Staff deleted successfully' });
+    deleteStaff(req.params.id, () => {
+        res.json({ message: 'Deleted successfully' });
     });
 };
 

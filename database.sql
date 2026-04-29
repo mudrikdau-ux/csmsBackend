@@ -16,6 +16,85 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `bookings`
+--
+
+DROP TABLE IF EXISTS `bookings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `bookings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `service_id` int NOT NULL,
+  `cleaners` int DEFAULT NULL,
+  `hours` int DEFAULT NULL,
+  `frequency` enum('one-time','weekly') DEFAULT NULL,
+  `materials` tinyint(1) DEFAULT NULL,
+  `property_type` varchar(100) DEFAULT NULL,
+  `address` text,
+  `city` varchar(100) DEFAULT NULL,
+  `landmark` varchar(255) DEFAULT NULL,
+  `latitude` decimal(10,8) DEFAULT NULL,
+  `longitude` decimal(11,8) DEFAULT NULL,
+  `service_date` date DEFAULT NULL,
+  `service_time` time DEFAULT NULL,
+  `instructions` text,
+  `first_name` varchar(100) DEFAULT NULL,
+  `last_name` varchar(100) DEFAULT NULL,
+  `email` varchar(150) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `payment_method` varchar(50) DEFAULT NULL,
+  `base_price` decimal(10,2) DEFAULT NULL,
+  `extras` decimal(10,2) DEFAULT NULL,
+  `discount` decimal(10,2) DEFAULT NULL,
+  `total_price` decimal(10,2) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `bookings`
+--
+
+LOCK TABLES `bookings` WRITE;
+/*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
+INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00','Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash',30000.00,15000.00,1500.00,43500.00,'pending','2026-04-29 09:49:07'),(2,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00','Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash',30000.00,15000.00,1500.00,43500.00,'pending','2026-04-29 09:52:53');
+/*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `services`
+--
+
+DROP TABLE IF EXISTS `services`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `services` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  `duration` int NOT NULL,
+  `location` enum('Unguja Island','Pemba Island','Both Islands') NOT NULL,
+  `description` text,
+  `includes` json DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `services`
+--
+
+LOCK TABLES `services` WRITE;
+/*!40000 ALTER TABLE `services` DISABLE KEYS */;
+/*!40000 ALTER TABLE `services` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `users`
 --
 
@@ -33,9 +112,13 @@ CREATE TABLE `users` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `otp` varchar(10) DEFAULT NULL,
   `otp_expiry` datetime DEFAULT NULL,
+  `role` varchar(20) DEFAULT 'user',
+  `phone` varchar(20) DEFAULT NULL,
+  `photo` varchar(255) DEFAULT NULL,
+  `staff_type` enum('normal','supervisor') DEFAULT 'normal',
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -44,7 +127,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Ali','Hassan','ali@gmail.com','$2b$10$m.2EJTAU4De/hD/4dOFzJOvATn3I/noGAx2PfNIWd6Y7w3VPKrHRK','Zanzibar','Male','2026-04-20 10:03:51','582649','2026-04-20 14:11:26'),(2,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$WKM2Q6d5o2PpTacWjTiajOL7lCmTS0dhgwc1sFsH3o3ctXU8Y8y26','Zanzibar','Male','2026-04-20 11:07:14',NULL,NULL);
+INSERT INTO `users` VALUES (7,'John','Staff','staff@gmail.com','$2b$10$aRKcwSRKx58EbdKzVkkUSe1WAqUctgrVTosvaYc9sRyoku5k57uUK','Zanzibar','Male','2026-04-20 13:55:16',NULL,NULL,'staff',NULL,NULL,'normal'),(8,'Mudrik','Dau','mudrikdau@example.com','$2b$10$FY7yhVSti8YtBMfP5F1cVeY.ttpZ1O.pcwf0nMG7i2DAEKwv0E7J2','Head Office','Male','2026-04-21 11:13:53',NULL,NULL,'admin',NULL,NULL,'normal'),(9,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$FY7yhVSti8YtBMfP5F1cVeY.ttpZ1O.pcwf0nMG7i2DAEKwv0E7J2','Head Office','Male','2026-04-21 11:14:31',NULL,NULL,'admin',NULL,NULL,'normal'),(10,'MO','','molittle1011@gmail.com','$2b$10$Ej0dUCArTONvgSLO0V.uvO4Ee0dpX/dD/OOrXu7HsGzuPGD657Dni','','Male','2026-04-21 12:33:22',NULL,NULL,'staff','0677532140','1776774801971.png','normal'),(15,'MO','11','msuasuasu@gmail.com','$2b$10$8UNmYWc/y1T1w80Z3CMcuODjHpA/7it5zZrMtmthFEaq7Lnei9Owy',NULL,NULL,'2026-04-29 09:01:45',NULL,NULL,'staff','0677532140','1777453305119.png','supervisor'),(16,'MO','11','msuasauasus@gmail.com','$2b$10$Gt80fHACtGaFfZMw8pp2UOUqpJdYAAyoF.5XcxUs7HvTItJ2aGSsm',NULL,NULL,'2026-04-29 09:03:16',NULL,NULL,'staff','0677532140','1777453396829.png','normal');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -57,4 +140,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-20 14:45:53
+-- Dump completed on 2026-04-29 12:56:49
