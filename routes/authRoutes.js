@@ -3,35 +3,31 @@ const router = express.Router();
 
 const {
     registerUser,
-    adminLogin,
-    verifyAdminOTP,
-    staffLogin,
     googleLogin,
     loginUser,
     verifyUserOTP,
-    resendAdminOTP
+    adminLogin,
+    verifyAdminOTP,
+    resendAdminOTP,
+    staffLogin
 } = require('../controllers/authController');
 
-const { validateRegister } = require('../middleware/validate');
+const { validateRegister, validateLogin } = require('../middleware/validate');
 
-
-// ================= USER AUTH =================
+// ==================== USER AUTH ====================
 router.post('/register', validateRegister, registerUser);
-router.post('/login', loginUser);
+router.post('/login', validateLogin, loginUser);
 router.post('/verify-otp', verifyUserOTP);
 
-
-// ================= GOOGLE AUTH =================
+// ==================== GOOGLE AUTH ====================
 router.post('/google-login', googleLogin);
 
-
-// ================= ADMIN AUTH =================
-router.post('/admin/login', adminLogin);
+// ==================== ADMIN AUTH ====================
+router.post('/admin/login', validateLogin, adminLogin);
 router.post('/admin/verify-otp', verifyAdminOTP);
 router.post('/admin/resend-otp', resendAdminOTP);
 
-// ================= STAFF AUTH =================
-router.post('/staff/login', staffLogin);
+// ==================== STAFF AUTH ====================
+router.post('/staff/login', validateLogin, staffLogin);
 
-// ================= EXPORT =================
 module.exports = router;

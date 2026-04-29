@@ -12,14 +12,14 @@ const {
     removeStaff
 } = require('../controllers/adminStaffController');
 
+// All routes require admin authentication
+router.use(verifyAdmin);
 
-// ADMIN ONLY
-router.post('/', verifyAdmin, uploadStaff.single('photo'), addStaff);
-router.put('/:id', verifyAdmin, uploadStaff.single('photo'), editStaff);
-router.delete('/:id', verifyAdmin, removeStaff);
-
-// GET
-router.get('/', verifyAdmin, getStaff);
-router.get('/:id', verifyAdmin, getSingleStaff);
+// Routes
+router.post('/', uploadStaff.single('photo'), addStaff);
+router.get('/', getStaff);
+router.get('/:id', getSingleStaff);
+router.put('/:id', uploadStaff.single('photo'), editStaff);
+router.delete('/:id', removeStaff);
 
 module.exports = router;

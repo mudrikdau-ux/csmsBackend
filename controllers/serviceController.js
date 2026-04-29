@@ -6,110 +6,283 @@ const {
     deleteService
 } = require('../models/serviceModel');
 
+// Helper to generate full image URL
+const getImageUrl = (req, filename) => {
+    if (!filename) return null;
+    return `${req.protocol}://${req.get('host')}/uploads/services/${filename}`;
+};
 
-// CREATE SERVICE
-const addService = (req, res) => {
-    const {
-        name,
-        price,
-        duration,
-        location,
-        description,
-        includes
-    } = req.body;
-
-    const image = req.file ? req.file.filename : null;
-
-    const parsedIncludes = JSON.parse(includes);
-
-    if (parsedIncludes.length > 6) {
-        return res.status(400).json({ message: 'Max 6 includes allowed' });
+// Helper to safely parse JSON
+const safeJSONParse = (data) => {
+    if (!data) return [];
+    
+    // If it's already an object/array, return it
+    if (typeof data === 'object') return data;
+    
+    try {
+        return JSON.parse(data);
+    } catch (error) {
+        console.warn('JSON parse warning:', error.message, 'Data:', data);
+        // If it's a comma-separated string, try to split it
+        if (typeof data === 'string' && data.includes(',')) {
+            return data.split(',').map(item => item.trim().replace(/^["']|["']$/g, ''));
+        }
+        // If it's a single string, wrap it in an array
+        if (typeof data === 'string' && data.length > 0) {
+            return [data];
+        }
+        return [];
     }
-
-    createService({
-        name,
-        price,
-        duration,
-        location,
-        description,
-        includes: parsedIncludes,
-        image
-    }, (err) => {
-        if (err) return res.status(500).json(err);
-
-        res.json({ message: 'Service created successfully' });
-    });
 };
 
+// ==================== CREATE SERVICE ====================
 
-// GET ALL SERVICES
-const getServices = (req, res) => {
-    getAllServices((err, results) => {
-        if (err) return res.status(500).json(err);
+const addService = async (req, res) => {
+    try {
+        const {
+            name,
+            price,
+            duration,
+            location,
+            description,
+            includes
+        } = req.body;
 
-        res.json(results);
-    });
+        // Validate required fields
+        if (!name || !price || !duration || !location) {
+            return res.status(400).json({ 
+                message: 'Name, price, duration, and location are required' 
+            });
+        }
+
+        // Validate location
+        const validLocations = ['Unguja Island', 'Pemba Island', 'Both Islands'];
+        if (!validLocations.includes(location)) {
+            return res.status(400).json({ 
+                message: 'Invalid location',
+                valid_locations: validLocations
+            });
+        }
+
+        // Parse includes
+        let parsedIncludes = [];
+        if (includes) {
+            try {
+                parsedIncludes = JSON.parse(includes);
+                if (!Array.isArray(parsedIncludes)) {
+                    throw new Error();
+                }
+            } catch {
+                // If JSON parse fails, try to split by comma
+                parsedIncludes = includes.split(',').map(item => item.trim().replace(/^["']|["']$/g, ''));
+            }
+        }
+
+        if (parsedIncludes.length > 6) {
+            return res.status(400).json({ message: 'Maximum 6 include items allowed' });
+        }
+
+        const image = req.file ? req.file.filename : null;
+
+        await createService({
+            name,
+            price: parseFloat(price),
+            duration: parseInt(duration),
+            location,
+            description: description || null,
+            includes: parsedIncludes,
+            image
+        });
+
+        res.status(201).json({ 
+            message: 'Service created successfully',
+            service: {
+                name,
+                price: parseFloat(price),
+                duration: parseInt(duration),
+                location,
+                includes: parsedIncludes,
+                image: image ? getImageUrl(req, image) : null
+            }
+        });
+
+    } catch (error) {
+        console.error('Create service error:', error);
+        res.status(500).json({ message: 'Failed to create service' });
+    }
 };
 
+// ==================== GET ALL SERVICES ====================
 
-// GET SINGLE SERVICE
-const getSingleService = (req, res) => {
-    const { id } = req.params;
+const getServices = async (req, res) => {
+    try {
+        const services = await getAllServices();
 
-    getServiceById(id, (err, result) => {
-        if (err) return res.status(500).json(err);
+        const list = services.map(s => ({
+            id: s.id,
+            name: s.name,
+            price: parseFloat(s.price),
+            duration: s.duration,
+            location: s.location,
+            description: s.description,
+            includes: safeJSONParse(s.includes),  // FIXED: Use safeJSONParse
+            image: getImageUrl(req, s.image),
+            created_at: s.created_at
+        }));
 
-        if (result.length === 0) {
+        res.json({
+            count: list.length,
+            services: list
+        });
+
+    } catch (error) {
+        console.error('Get services error:', error);
+        res.status(500).json({ message: 'Failed to fetch services' });
+    }
+};
+
+// ==================== GET SINGLE SERVICE ====================
+
+const getSingleService = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ message: 'Invalid service ID' });
+        }
+
+        const service = await getServiceById(id);
+
+        if (service.length === 0) {
             return res.status(404).json({ message: 'Service not found' });
         }
 
-        res.json(result[0]);
-    });
+        const s = service[0];
+
+        res.json({
+            service: {
+                id: s.id,
+                name: s.name,
+                price: parseFloat(s.price),
+                duration: s.duration,
+                location: s.location,
+                description: s.description,
+                includes: safeJSONParse(s.includes),  // FIXED: Use safeJSONParse
+                image: getImageUrl(req, s.image),
+                created_at: s.created_at
+            }
+        });
+
+    } catch (error) {
+        console.error('Get service error:', error);
+        res.status(500).json({ message: 'Failed to fetch service' });
+    }
 };
 
+// ==================== UPDATE SERVICE ====================
 
-// UPDATE SERVICE
-const editService = (req, res) => {
-    const { id } = req.params;
+const editService = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            name,
+            price,
+            duration,
+            location,
+            description,
+            includes
+        } = req.body;
 
-    const {
-        name,
-        price,
-        duration,
-        location,
-        description,
-        includes
-    } = req.body;
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ message: 'Invalid service ID' });
+        }
 
-    const image = req.file ? req.file.filename : null;
+        // Check if service exists
+        const existing = await getServiceById(id);
+        if (existing.length === 0) {
+            return res.status(404).json({ message: 'Service not found' });
+        }
 
-    const parsedIncludes = JSON.parse(includes);
+        // Parse includes if provided
+        let parsedIncludes;
+        if (includes) {
+            try {
+                parsedIncludes = JSON.parse(includes);
+                if (!Array.isArray(parsedIncludes)) {
+                    throw new Error();
+                }
+            } catch {
+                // If JSON parse fails, try to split by comma
+                parsedIncludes = includes.split(',').map(item => item.trim().replace(/^["']|["']$/g, ''));
+            }
+            if (parsedIncludes && parsedIncludes.length > 6) {
+                return res.status(400).json({ message: 'Maximum 6 include items allowed' });
+            }
+        }
 
-    updateService(id, {
-        name,
-        price,
-        duration,
-        location,
-        description,
-        includes: parsedIncludes,
-        image
-    }, (err) => {
-        if (err) return res.status(500).json(err);
+        const image = req.file ? req.file.filename : undefined;
 
-        res.json({ message: 'Service updated successfully' });
-    });
+        await updateService(id, {
+            name,
+            price: price ? parseFloat(price) : undefined,
+            duration: duration ? parseInt(duration) : undefined,
+            location,
+            description,
+            includes: parsedIncludes,
+            image
+        });
+
+        // Get updated service
+        const updated = await getServiceById(id);
+        const s = updated[0];
+
+        res.json({
+            message: 'Service updated successfully',
+            service: {
+                id: s.id,
+                name: s.name,
+                price: parseFloat(s.price),
+                duration: s.duration,
+                location: s.location,
+                description: s.description,
+                includes: safeJSONParse(s.includes),  // FIXED: Use safeJSONParse
+                image: getImageUrl(req, s.image)
+            }
+        });
+
+    } catch (error) {
+        console.error('Update service error:', error);
+        res.status(500).json({ message: 'Failed to update service' });
+    }
 };
 
+// ==================== DELETE SERVICE ====================
 
-// DELETE SERVICE
-const removeService = (req, res) => {
-    const { id } = req.params;
+const removeService = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    deleteService(id, (err) => {
-        if (err) return res.status(500).json(err);
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ message: 'Invalid service ID' });
+        }
 
-        res.json({ message: 'Service deleted successfully' });
-    });
+        // Check if exists
+        const service = await getServiceById(id);
+        if (service.length === 0) {
+            return res.status(404).json({ message: 'Service not found' });
+        }
+
+        await deleteService(id);
+
+        res.json({ 
+            message: 'Service deleted successfully',
+            deleted_id: parseInt(id)
+        });
+
+    } catch (error) {
+        console.error('Delete service error:', error);
+        res.status(500).json({ message: 'Failed to delete service' });
+    }
 };
 
 module.exports = {

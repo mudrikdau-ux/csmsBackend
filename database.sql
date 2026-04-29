@@ -51,7 +51,7 @@ CREATE TABLE `bookings` (
   `status` varchar(50) DEFAULT 'pending',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -60,7 +60,7 @@ CREATE TABLE `bookings` (
 
 LOCK TABLES `bookings` WRITE;
 /*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
-INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00','Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash',30000.00,15000.00,1500.00,43500.00,'pending','2026-04-29 09:49:07'),(2,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00','Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash',30000.00,15000.00,1500.00,43500.00,'pending','2026-04-29 09:52:53');
+INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00','Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash',30000.00,15000.00,1500.00,43500.00,'pending','2026-04-29 09:49:07'),(2,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00','Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash',30000.00,15000.00,1500.00,43500.00,'pending','2026-04-29 09:52:53'),(3,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00','Please be careful with glass items','John','Doe','john@example.com','0777000000','cash',30000.00,15000.00,1500.00,43500.00,'pending','2026-04-29 12:03:39'),(4,NULL,3,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00','Please be careful with glass items','John','Doe','john@example.com','0777000000','cash',30000.00,15000.00,1500.00,43500.00,'pending','2026-04-29 12:03:59');
 /*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -113,12 +113,13 @@ CREATE TABLE `users` (
   `otp` varchar(10) DEFAULT NULL,
   `otp_expiry` datetime DEFAULT NULL,
   `role` varchar(20) DEFAULT 'user',
+  `provider` varchar(10) DEFAULT 'local',
   `phone` varchar(20) DEFAULT NULL,
   `photo` varchar(255) DEFAULT NULL,
   `staff_type` enum('normal','supervisor') DEFAULT 'normal',
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -127,7 +128,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (7,'John','Staff','staff@gmail.com','$2b$10$aRKcwSRKx58EbdKzVkkUSe1WAqUctgrVTosvaYc9sRyoku5k57uUK','Zanzibar','Male','2026-04-20 13:55:16',NULL,NULL,'staff',NULL,NULL,'normal'),(8,'Mudrik','Dau','mudrikdau@example.com','$2b$10$FY7yhVSti8YtBMfP5F1cVeY.ttpZ1O.pcwf0nMG7i2DAEKwv0E7J2','Head Office','Male','2026-04-21 11:13:53',NULL,NULL,'admin',NULL,NULL,'normal'),(9,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$FY7yhVSti8YtBMfP5F1cVeY.ttpZ1O.pcwf0nMG7i2DAEKwv0E7J2','Head Office','Male','2026-04-21 11:14:31',NULL,NULL,'admin',NULL,NULL,'normal'),(10,'MO','','molittle1011@gmail.com','$2b$10$Ej0dUCArTONvgSLO0V.uvO4Ee0dpX/dD/OOrXu7HsGzuPGD657Dni','','Male','2026-04-21 12:33:22',NULL,NULL,'staff','0677532140','1776774801971.png','normal'),(15,'MO','11','msuasuasu@gmail.com','$2b$10$8UNmYWc/y1T1w80Z3CMcuODjHpA/7it5zZrMtmthFEaq7Lnei9Owy',NULL,NULL,'2026-04-29 09:01:45',NULL,NULL,'staff','0677532140','1777453305119.png','supervisor'),(16,'MO','11','msuasauasus@gmail.com','$2b$10$Gt80fHACtGaFfZMw8pp2UOUqpJdYAAyoF.5XcxUs7HvTItJ2aGSsm',NULL,NULL,'2026-04-29 09:03:16',NULL,NULL,'staff','0677532140','1777453396829.png','normal');
+INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,'user','local',NULL,NULL,'normal');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -140,4 +141,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-29 12:56:49
+-- Dump completed on 2026-04-29 15:25:53

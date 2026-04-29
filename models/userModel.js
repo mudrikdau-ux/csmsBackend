@@ -1,14 +1,15 @@
 const db = require('../config/db');
 
-// ================= CREATE USER =================
-const createUser = (userData, callback) => {
+// ==================== USER OPERATIONS ====================
+
+const createUser = async (userData) => {
     const sql = `
         INSERT INTO users 
         (first_name, last_name, email, password, address, gender, role, provider)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.query(sql, [
+    return db.query(sql, [
         userData.first_name,
         userData.last_name,
         userData.email,
@@ -17,19 +18,17 @@ const createUser = (userData, callback) => {
         userData.gender,
         userData.role || 'user',
         'local'
-    ], callback);
+    ]);
 };
 
-
-// ================= GOOGLE USER =================
-const createGoogleUser = (userData, callback) => {
+const createGoogleUser = async (userData) => {
     const sql = `
         INSERT INTO users 
         (first_name, last_name, email, password, address, gender, role, provider)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.query(sql, [
+    return db.query(sql, [
         userData.first_name,
         userData.last_name,
         userData.email,
@@ -38,19 +37,19 @@ const createGoogleUser = (userData, callback) => {
         userData.gender || 'Male',
         'user',
         'google'
-    ], callback);
+    ]);
 };
 
+// ==================== STAFF OPERATIONS ====================
 
-// ================= STAFF CRUD =================
-const createStaff = (data, callback) => {
+const createStaff = async (data) => {
     const sql = `
         INSERT INTO users 
         (first_name, last_name, email, password, phone, photo, role, staff_type)
         VALUES (?, ?, ?, ?, ?, ?, 'staff', ?)
     `;
 
-    db.query(sql, [
+    return db.query(sql, [
         data.first_name,
         data.last_name,
         data.email,
@@ -58,25 +57,26 @@ const createStaff = (data, callback) => {
         data.phone,
         data.photo,
         data.staff_type || 'normal'
-    ], callback);
+    ]);
 };
 
-const getAllStaff = (callback) => {
-    db.query(`SELECT * FROM users WHERE role='staff'`, callback);
+const getAllStaff = async () => {
+    return db.query(`SELECT * FROM users WHERE role = 'staff'`);
 };
 
-const getStaffById = (id, callback) => {
-    db.query(`SELECT * FROM users WHERE id=? AND role='staff'`, [id], callback);
+const getStaffById = async (id) => {
+    return db.query(`SELECT * FROM users WHERE id = ? AND role = 'staff'`, [id]);
 };
 
-const updateStaff = (id, data, callback) => {
+const updateStaff = async (id, data) => {
     const sql = `
         UPDATE users 
-        SET first_name=?, last_name=?, email=?, password=?, phone=?, photo=?, staff_type=?
-        WHERE id=? AND role='staff'
+        SET first_name = ?, last_name = ?, email = ?, password = ?, 
+            phone = ?, photo = ?, staff_type = ?
+        WHERE id = ? AND role = 'staff'
     `;
 
-    db.query(sql, [
+    return db.query(sql, [
         data.first_name,
         data.last_name,
         data.email,
@@ -85,56 +85,50 @@ const updateStaff = (id, data, callback) => {
         data.photo,
         data.staff_type,
         id
-    ], callback);
+    ]);
 };
 
-const deleteStaff = (id, callback) => {
-    db.query(`DELETE FROM users WHERE id=? AND role='staff'`, [id], callback);
+const deleteStaff = async (id) => {
+    return db.query(`DELETE FROM users WHERE id = ? AND role = 'staff'`, [id]);
 };
 
+// ==================== FIND OPERATIONS ====================
 
-// ================= FIND USERS =================
-const findUserByEmail = (email, callback) => {
-    db.query(`SELECT * FROM users WHERE email = ?`, [email], callback);
+const findUserByEmail = async (email) => {
+    return db.query(`SELECT * FROM users WHERE email = ?`, [email]);
 };
 
-const findAdminByEmail = (email, callback) => {
-    db.query(
-        `SELECT * FROM users WHERE email=? AND role='admin'`,
-        [email],
-        callback
+const findAdminByEmail = async (email) => {
+    return db.query(`SELECT * FROM users WHERE email = ? AND role = 'admin'`, [email]);
+};
+
+const findStaffByEmail = async (email) => {
+    return db.query(`SELECT * FROM users WHERE email = ? AND role = 'staff'`, [email]);
+};
+
+// ==================== OTP OPERATIONS ====================
+
+const saveOTP = async (email, otp, expiry) => {
+    return db.query(
+        `UPDATE users SET otp = ?, otp_expiry = ? WHERE email = ?`,
+        [otp, expiry, email]
     );
 };
 
-const findStaffByEmail = (email, callback) => {
-    db.query(
-        `SELECT * FROM users WHERE email=? AND role='staff'`,
-        [email],
-        callback
+const verifyOTP = async (email, otp) => {
+    return db.query(
+        `SELECT * FROM users WHERE email = ? AND otp = ? AND otp_expiry > NOW()`,
+        [email, otp]
     );
 };
 
-
-// ================= OTP =================
-const saveOTP = (email, otp, expiry, callback) => {
-    db.query(
-        `UPDATE users SET otp=?, otp_expiry=? WHERE email=?`,
-        [otp, expiry, email],
-        callback
+const clearOTP = async (email) => {
+    return db.query(
+        `UPDATE users SET otp = NULL, otp_expiry = NULL WHERE email = ?`,
+        [email]
     );
 };
 
-const verifyOTP = (email, otp, callback) => {
-    db.query(
-        `SELECT * FROM users 
-         WHERE email=? AND otp=? AND otp_expiry > NOW()`,
-        [email, otp],
-        callback
-    );
-};
-
-
-// ================= EXPORT =================
 module.exports = {
     createUser,
     createGoogleUser,
@@ -147,5 +141,6 @@ module.exports = {
     findAdminByEmail,
     findStaffByEmail,
     saveOTP,
-    verifyOTP
+    verifyOTP,
+    clearOTP
 };

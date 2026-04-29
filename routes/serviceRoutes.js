@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const upload = require('../config/upload');
-const { verifyAdmin } = require('../middleware/auth');
+const { verifyAdmin, verifyToken } = require('../middleware/auth');
 
 const {
     addService,
@@ -12,14 +12,13 @@ const {
     removeService
 } = require('../controllers/serviceController');
 
+// Public routes
+router.get('/', getServices);
+router.get('/:id', getSingleService);
 
-// ADMIN ONLY
+// Admin only routes
 router.post('/', verifyAdmin, upload.single('image'), addService);
 router.put('/:id', verifyAdmin, upload.single('image'), editService);
 router.delete('/:id', verifyAdmin, removeService);
-
-// PUBLIC
-router.get('/', getServices);
-router.get('/:id', getSingleService);
 
 module.exports = router;
