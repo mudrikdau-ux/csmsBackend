@@ -14,13 +14,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use('/reports', express.static(path.join(__dirname, 'reports')));
+app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Create upload directories if they don't exist
 const fs = require('fs');
-const dirs = ['uploads/services', 'uploads/staff', 'reports'];
+const dirs = ['uploads/services', 'uploads/staff', 'reports', 'invoices'];
 dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -33,6 +34,7 @@ app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/admin-staff', require('./routes/adminStaffRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/contractors', require('./routes/contractorRoutes'));
+app.use('/api/invoices', require('./routes/invoiceRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 
 // Health check

@@ -10,11 +10,12 @@ const {
     editContractor,
     removeContractor,
     updateStatus,
-    searchContractorsController,
-    generateInvoice,
-    getContractorInvoices,
-    updateInvoiceStatusController
+    searchContractorsController
 } = require('../controllers/contractorController');
+
+const {
+    getContractorInvoices
+} = require('../controllers/invoiceController');
 
 // All routes require admin authentication
 router.use(verifyAdmin);
@@ -42,15 +43,7 @@ router.delete('/:id', removeContractor);
 // Update contractor status
 router.patch('/:id/status', updateStatus);
 
-// ==================== INVOICE ROUTES ====================
-
-// Generate invoice for contractor
-router.post('/:id/invoices', generateInvoice);
-
 // Get contractor invoices
 router.get('/:id/invoices', getContractorInvoices);
-
-// Update invoice status
-router.patch('/invoices/:invoiceId/status', updateInvoiceStatusController);
 
 module.exports = router;
