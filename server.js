@@ -13,13 +13,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+app.use('/reports', express.static(path.join(__dirname, 'reports')));
 
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Create upload directories if they don't exist
 const fs = require('fs');
-const dirs = ['uploads/services', 'uploads/staff'];
+const dirs = ['uploads/services', 'uploads/staff', 'reports'];
 dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -31,7 +32,8 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/admin-staff', require('./routes/adminStaffRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
-app.use('/api/assignments', require('./routes/assignmentRoutes'));
+app.use('/api/contractors', require('./routes/contractorRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {

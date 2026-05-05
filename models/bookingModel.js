@@ -68,6 +68,10 @@ const getAllBookings = async (filters = {}) => {
         sql += ` AND service_date <= ?`;
         values.push(filters.date_to);
     }
+    if (filters.assigned_staff_id) {
+        sql += ` AND assigned_staff_id = ?`;
+        values.push(filters.assigned_staff_id);
+    }
 
     sql += ` ORDER BY created_at DESC`;
 
@@ -83,7 +87,6 @@ const getAllBookings = async (filters = {}) => {
     return db.query(sql, values);
 };
 
-// ✅ NEW: Get bookings by user ID with optional filters
 const getBookingsByUserId = async (userId, filters = {}) => {
     let sql = `SELECT * FROM bookings WHERE user_id = ?`;
     const values = [userId];
@@ -130,10 +133,17 @@ const updateBookingStatus = async (id, status) => {
     );
 };
 
-const assignStaffToBooking = async (bookingId, staffId) => {
+const assignStaffToBooking = async (bookingId, staffId, staffName) => {
     return db.query(
-        `UPDATE bookings SET assigned_staff_id = ? WHERE id = ?`,
-        [staffId, bookingId]
+        `UPDATE bookings SET assigned_staff_id = ?, assigned_staff_name = ?, status = 'confirmed' WHERE id = ?`,
+        [staffId, staffName, bookingId]
+    );
+};
+
+const removeStaffAssignment = async (bookingId) => {
+    return db.query(
+        `UPDATE bookings SET assigned_staff_id = NULL, assigned_staff_name = NULL, status = 'pending' WHERE id = ?`,
+        [bookingId]
     );
 };
 
@@ -149,6 +159,32 @@ const getBookingCount = async (filters = {}) => {
         sql += ` AND user_id = ?`;
         values.push(filters.user_id);
     }
+    if (filters.assigned_staff_id) {
+        sql += ` AND assigned_staff_id = ?`;
+        values.push(filters.assigned_staff_id);
+    }
+
+    return db.query(sql, values);
+};
+
+const getStaffBookings = async (staffId, filters = {}) => {
+    let sql = `SELECT * FROM bookings WHERE assigned_staff_id = ?`;
+    const values = [staffId];
+
+    if (filters.status) {
+        sql += ` AND status = ?`;
+        values.push(filters.status);
+    }
+    if (filters.date_from) {
+        sql += ` AND service_date >= ?`;
+        values.push(filters.date_from);
+    }
+    if (filters.date_to) {
+        sql += ` AND service_date <= ?`;
+        values.push(filters.date_to);
+    }
+
+    sql += ` ORDER BY service_date ASC, service_time ASC`;
 
     return db.query(sql, values);
 };
@@ -157,8 +193,10 @@ module.exports = {
     createBooking,
     getBookingById,
     getAllBookings,
-    getBookingsByUserId,  // ✅ NEW
+    getBookingsByUserId,
     updateBookingStatus,
     assignStaffToBooking,
-    getBookingCount
+    removeStaffAssignment,
+    getBookingCount,
+    getStaffBookings
 };
