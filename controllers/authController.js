@@ -524,7 +524,6 @@ const changePassword = async (req, res) => {
         const userId = req.user.id;
         const { current_password, new_password, confirm_password } = req.body;
 
-        // Validate
         if (!current_password || !new_password || !confirm_password) {
             return res.status(400).json({
                 message: 'All password fields are required',
@@ -544,7 +543,6 @@ const changePassword = async (req, res) => {
             return res.status(400).json({ message: 'New password must be different from current password' });
         }
 
-        // Get user
         const user = await getUserById(userId);
         if (!user || user.length === 0) {
             return res.status(404).json({ message: 'User not found' });
@@ -552,23 +550,35 @@ const changePassword = async (req, res) => {
 
         const u = user[0];
 
-        // Check if user has password
-        if (!u.password) {
+        // Google users cannot change password here
+        if (u.provider === 'google' && u.password === null) {
             return res.status(400).json({
-                message: 'This account uses Google login. Password management is handled by Google.'
+                message: 'This account uses Google Sign-In. Password management is handled by Google.'
             });
         }
 
-        // Verify current password
+        // User has NO password at all - first time setup
+        if (u.password === null || u.password === undefined) {
+            if (u.provider === 'google') {
+                return res.status(400).json({
+                    message: 'This account uses Google Sign-In. Password management is handled by Google.'
+                });
+            }
+            const hashedPassword = await bcrypt.hash(new_password, 10);
+            await updateUserPassword(userId, hashedPassword);
+            return res.json({
+                success: true,
+                message: 'Password set successfully. You can now login with your email and new password.'
+            });
+        }
+
+        // User HAS a password - MUST verify current password
         const isMatch = await bcrypt.compare(current_password, u.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Current password is incorrect' });
         }
 
-        // Hash new password
         const hashedPassword = await bcrypt.hash(new_password, 10);
-
-        // Update password
         await updateUserPassword(userId, hashedPassword);
 
         res.json({

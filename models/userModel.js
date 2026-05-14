@@ -243,9 +243,10 @@ const updateUserProfile = async (userId, data) => {
     ]);
 };
 
+// ✅✅✅ FIXED: Added password, profile_photo, email_notifications, web_notifications ✅✅✅
 const getUserById = async (userId) => {
     return db.query(
-        `SELECT id, first_name, last_name, email, address, gender, phone, role, provider, created_at 
+        `SELECT id, first_name, last_name, email, password, address, gender, phone, role, provider, profile_photo, email_notifications, web_notifications, created_at 
          FROM users WHERE id = ?`,
         [userId]
     );
