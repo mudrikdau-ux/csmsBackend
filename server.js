@@ -21,7 +21,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Create upload directories if they don't exist
 const fs = require('fs');
-const dirs = ['uploads/services', 'uploads/staff', 'reports', 'invoices'];
+const dirs = ['uploads/services', 'uploads/staff', 'reports', 'invoices', 'receipts'];
 dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -37,6 +37,7 @@ app.use('/api/contractors', require('./routes/contractorRoutes'));
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/feedbacks', require('./routes/feedbackRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {
