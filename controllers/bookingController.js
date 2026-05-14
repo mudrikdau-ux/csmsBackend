@@ -12,6 +12,7 @@ const {
 
 const { getServiceById } = require('../models/serviceModel');
 const { getStaffById } = require('../models/userModel');
+const { sendBookingConfirmation, sendBookingStatusUpdate } = require('../utils/notifications');
 
 // ==================== CREATE BOOKING (AUTHENTICATED ONLY) ====================
 
@@ -81,6 +82,19 @@ const createBookingController = async (req, res) => {
 
         const bookingId = result.insertId;
 
+        // ✅ SEND BOOKING CONFIRMATION EMAIL
+        sendBookingConfirmation(userId, {
+            id: bookingId,
+            customer_name: `${data.first_name} ${data.last_name}`,
+            service_name: service.name,
+            service_date: data.service_date,
+            service_time: data.service_time,
+            address: data.address,
+            city: data.city,
+            total_price: total,
+            assigned_staff: null
+        });
+
         res.status(201).json({
             success: true,
             message: 'Booking created successfully',
@@ -125,6 +139,19 @@ const createBookingController = async (req, res) => {
     }
 };
 
+// ==================== HELPER: STATUS LABELS ====================
+
+const getStatusLabel = (status) => {
+    const labels = {
+        'pending': 'Pending',
+        'confirmed': 'Upcoming',
+        'in_progress': 'In Progress',
+        'completed': 'Delivered',
+        'cancelled': 'Cancelled'
+    };
+    return labels[status] || status;
+};
+
 // ==================== GET MY BOOKINGS (ENHANCED) ====================
 
 const getMyBookings = async (req, res) => {
@@ -154,7 +181,7 @@ const getMyBookings = async (req, res) => {
                     statusFilter = 'cancelled';
                     break;
                 case 'unpaid':
-                    statusFilter = 'pending'; // Show pending payments
+                    statusFilter = 'pending';
                     break;
                 case 'all':
                     statusFilter = null;
@@ -281,18 +308,6 @@ const getMyBookings = async (req, res) => {
             error: error.message 
         });
     }
-};
-
-// Helper function for status labels
-const getStatusLabel = (status) => {
-    const labels = {
-        'pending': 'Pending',
-        'confirmed': 'Upcoming',
-        'in_progress': 'In Progress',
-        'completed': 'Delivered',
-        'cancelled': 'Cancelled'
-    };
-    return labels[status] || status;
 };
 
 // ==================== ADMIN: GET ALL BOOKINGS ====================
@@ -559,6 +574,17 @@ const assignStaff = async (req, res) => {
         // Assign staff
         await assignStaffToBooking(id, staff_id, staffName);
 
+        // ✅ SEND NOTIFICATION TO CUSTOMER
+        if (b.user_id) {
+            sendBookingStatusUpdate(b.user_id, {
+                id: parseInt(id),
+                service_name: 'Cleaning Service',
+                service_date: b.service_date,
+                service_time: b.service_time,
+                assigned_staff: staffName
+            }, 'confirmed');
+        }
+
         res.json({
             success: true,
             message: 'Staff assigned successfully',
@@ -665,6 +691,16 @@ const updateBookingStatusController = async (req, res) => {
         }
 
         await updateBookingStatus(id, status);
+
+        // ✅ SEND NOTIFICATION ON STATUS CHANGE
+        if (booking[0].user_id) {
+            sendBookingStatusUpdate(booking[0].user_id, {
+                id: parseInt(id),
+                service_name: 'Cleaning Service',
+                service_date: booking[0].service_date,
+                service_time: booking[0].service_time
+            }, status);
+        }
 
         res.json({ 
             success: true,

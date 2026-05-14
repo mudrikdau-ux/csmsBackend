@@ -14,7 +14,16 @@ const {
     findStaffByEmail,
     saveOTP,
     verifyOTP,
-    clearOTP
+    clearOTP,
+    blacklistToken,
+    deleteUserAccount,
+    getEmailNotificationPreference,
+    toggleEmailNotifications,
+    logNotification,
+    getUserNotificationHistory,
+    updateUserPassword,
+    updateUserProfile,
+    getUserById
 } = require('../models/userModel');
 
 // ==================== REGISTER USER ====================
@@ -23,7 +32,6 @@ const registerUser = async (req, res) => {
     try {
         const { first_name, last_name, email, password, address, gender } = req.body;
 
-        // Check if email exists
         const existingUser = await findUserByEmail(email);
         if (existingUser.length > 0) {
             return res.status(400).json({ 
@@ -32,10 +40,8 @@ const registerUser = async (req, res) => {
             });
         }
 
-        // Hash password
         const hashedPassword = await hashPassword(password);
 
-        // Create user
         await createUser({
             first_name,
             last_name,
@@ -72,7 +78,6 @@ const googleLogin = async (req, res) => {
             return res.status(400).json({ message: 'Google token is required' });
         }
 
-        // Verify Google token
         const ticket = await client.verifyIdToken({
             idToken: token,
             audience: process.env.GOOGLE_CLIENT_ID
@@ -81,16 +86,13 @@ const googleLogin = async (req, res) => {
         const payload = ticket.getPayload();
         const { email, given_name, family_name } = payload;
 
-        // Check if user exists
         const existingUser = await findUserByEmail(email);
 
         let userData;
 
         if (existingUser.length > 0) {
-            // User exists - login
             userData = existingUser[0];
         } else {
-            // Create new Google user
             await createGoogleUser({
                 first_name: given_name,
                 last_name: family_name,
@@ -101,13 +103,8 @@ const googleLogin = async (req, res) => {
             userData = newUser[0];
         }
 
-        // Generate JWT
         const jwtToken = jwt.sign(
-            { 
-                id: userData.id, 
-                email: userData.email, 
-                role: userData.role || 'user' 
-            },
+            { id: userData.id, email: userData.email, role: userData.role || 'user' },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -130,13 +127,12 @@ const googleLogin = async (req, res) => {
     }
 };
 
-// ==================== USER LOGIN (STEP 1: Send OTP) ====================
+// ==================== USER LOGIN (STEP 1) ====================
 
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Find user
         const users = await findUserByEmail(email);
         
         if (users.length === 0) {
@@ -145,32 +141,26 @@ const loginUser = async (req, res) => {
 
         const user = users[0];
 
-        // Check if user has password (not Google-only)
         if (!user.password) {
             return res.status(400).json({ 
                 message: 'This account uses Google login. Please sign in with Google.' 
             });
         }
 
-        // Verify password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        // Generate OTP
         const otp = generateOTP();
         const expiry = new Date(Date.now() + 5 * 60 * 1000);
 
-        // Save OTP
         await saveOTP(email, otp, expiry);
-
-        // Send OTP email
         await sendOTPEmail(email, user.first_name, otp, 5);
 
         res.json({ 
             message: 'Verification code sent to your email',
-            email: email // For client reference
+            email: email
         });
 
     } catch (error) {
@@ -189,7 +179,6 @@ const verifyUserOTP = async (req, res) => {
             return res.status(400).json({ message: 'Email and OTP are required' });
         }
 
-        // Verify OTP
         const result = await verifyOTP(email, otp);
 
         if (result.length === 0) {
@@ -198,16 +187,10 @@ const verifyUserOTP = async (req, res) => {
 
         const user = result[0];
 
-        // Clear OTP after successful verification
         await clearOTP(email);
 
-        // Generate JWT
         const token = jwt.sign(
-            { 
-                id: user.id, 
-                email: user.email, 
-                role: user.role || 'user' 
-            },
+            { id: user.id, email: user.email, role: user.role || 'user' },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -232,7 +215,7 @@ const verifyUserOTP = async (req, res) => {
     }
 };
 
-// ==================== ADMIN LOGIN (STEP 1: Send OTP) ====================
+// ==================== ADMIN LOGIN ====================
 
 const adminLogin = async (req, res) => {
     try {
@@ -242,7 +225,6 @@ const adminLogin = async (req, res) => {
             return res.status(400).json({ message: 'Email and password are required' });
         }
 
-        // Find admin
         const admins = await findAdminByEmail(email);
         
         if (admins.length === 0) {
@@ -251,20 +233,15 @@ const adminLogin = async (req, res) => {
 
         const admin = admins[0];
 
-        // Verify password
         const isMatch = await bcrypt.compare(password, admin.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        // Generate OTP
         const otp = generateOTP();
         const expiry = new Date(Date.now() + 5 * 60 * 1000);
 
-        // Save OTP
         await saveOTP(email, otp, expiry);
-
-        // Send OTP email
         await sendOTPEmail(email, admin.first_name, otp, 5);
 
         res.json({ 
@@ -288,7 +265,6 @@ const verifyAdminOTP = async (req, res) => {
             return res.status(400).json({ message: 'Email and OTP are required' });
         }
 
-        // Verify OTP
         const result = await verifyOTP(email, otp);
 
         if (result.length === 0) {
@@ -297,21 +273,14 @@ const verifyAdminOTP = async (req, res) => {
 
         const admin = result[0];
 
-        // Check role
         if (admin.role !== 'admin') {
             return res.status(403).json({ message: 'Access denied. Not an admin account.' });
         }
 
-        // Clear OTP
         await clearOTP(email);
 
-        // Generate JWT
         const token = jwt.sign(
-            { 
-                id: admin.id, 
-                email: admin.email, 
-                role: 'admin' 
-            },
+            { id: admin.id, email: admin.email, role: 'admin' },
             process.env.JWT_SECRET,
             { expiresIn: '8h' }
         );
@@ -344,7 +313,6 @@ const resendAdminOTP = async (req, res) => {
             return res.status(400).json({ message: 'Email is required' });
         }
 
-        // Check if admin exists
         const admins = await findAdminByEmail(email);
         
         if (admins.length === 0) {
@@ -353,14 +321,10 @@ const resendAdminOTP = async (req, res) => {
 
         const admin = admins[0];
 
-        // Generate new OTP
         const otp = generateOTP();
         const expiry = new Date(Date.now() + 5 * 60 * 1000);
 
-        // Save new OTP
         await saveOTP(email, otp, expiry);
-
-        // Send OTP
         await sendOTPEmail(email, admin.first_name, otp, 5);
 
         res.json({ 
@@ -385,7 +349,6 @@ const staffLogin = async (req, res) => {
             return res.status(400).json({ message: 'Email and password are required' });
         }
 
-        // Find staff
         const staffMembers = await findStaffByEmail(email);
         
         if (staffMembers.length === 0) {
@@ -394,13 +357,11 @@ const staffLogin = async (req, res) => {
 
         const staff = staffMembers[0];
 
-        // Verify password
         const isMatch = await bcrypt.compare(password, staff.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        // Generate JWT
         const token = jwt.sign(
             {
                 id: staff.id,
@@ -432,6 +393,375 @@ const staffLogin = async (req, res) => {
     }
 };
 
+// ==================== LOGOUT ====================
+
+const logoutUser = async (req, res) => {
+    try {
+        const token = req.token;
+        const userId = req.user.id;
+
+        const decoded = jwt.decode(token);
+        const expiresAt = new Date(decoded.exp * 1000);
+
+        await blacklistToken(token, userId, expiresAt);
+
+        res.json({
+            success: true,
+            message: 'Logged out successfully. Token has been invalidated.'
+        });
+
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to logout',
+            error: error.message
+        });
+    }
+};
+
+// ==================== GET PROFILE ====================
+
+const getProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await getUserById(userId);
+
+        if (!user || user.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const u = user[0];
+
+        res.json({
+            success: true,
+            profile: {
+                id: u.id,
+                first_name: u.first_name,
+                last_name: u.last_name,
+                email: u.email,
+                address: u.address,
+                gender: u.gender,
+                phone: u.phone,
+                role: u.role,
+                provider: u.provider || 'local',
+                created_at: u.created_at
+            }
+        });
+
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch profile',
+            error: error.message
+        });
+    }
+};
+
+// ==================== UPDATE PROFILE ====================
+
+const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { first_name, last_name, address, gender, phone } = req.body;
+
+        if (!first_name || !last_name) {
+            return res.status(400).json({
+                message: 'First name and last name are required'
+            });
+        }
+
+        if (first_name.length < 2 || last_name.length < 2) {
+            return res.status(400).json({
+                message: 'Name must be at least 2 characters'
+            });
+        }
+
+        if (gender && !['Male', 'Female'].includes(gender)) {
+            return res.status(400).json({ message: 'Gender must be Male or Female' });
+        }
+
+        await updateUserProfile(userId, {
+            first_name: first_name.trim(),
+            last_name: last_name.trim(),
+            address: address || '',
+            gender: gender || 'Male',
+            phone: phone || null
+        });
+
+        const updated = await getUserById(userId);
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            profile: {
+                id: updated[0].id,
+                first_name: updated[0].first_name,
+                last_name: updated[0].last_name,
+                email: updated[0].email,
+                address: updated[0].address,
+                gender: updated[0].gender,
+                phone: updated[0].phone,
+                role: updated[0].role
+            }
+        });
+
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update profile',
+            error: error.message
+        });
+    }
+};
+
+// ==================== CHANGE PASSWORD ====================
+
+const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { current_password, new_password, confirm_password } = req.body;
+
+        // Validate
+        if (!current_password || !new_password || !confirm_password) {
+            return res.status(400).json({
+                message: 'All password fields are required',
+                required: ['current_password', 'new_password', 'confirm_password']
+            });
+        }
+
+        if (new_password !== confirm_password) {
+            return res.status(400).json({ message: 'New passwords do not match' });
+        }
+
+        if (new_password.length < 6) {
+            return res.status(400).json({ message: 'New password must be at least 6 characters' });
+        }
+
+        if (current_password === new_password) {
+            return res.status(400).json({ message: 'New password must be different from current password' });
+        }
+
+        // Get user
+        const user = await getUserById(userId);
+        if (!user || user.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const u = user[0];
+
+        // Check if user has password
+        if (!u.password) {
+            return res.status(400).json({
+                message: 'This account uses Google login. Password management is handled by Google.'
+            });
+        }
+
+        // Verify current password
+        const isMatch = await bcrypt.compare(current_password, u.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        // Update password
+        await updateUserPassword(userId, hashedPassword);
+
+        res.json({
+            success: true,
+            message: 'Password changed successfully. Please login again with your new password.'
+        });
+
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to change password',
+            error: error.message
+        });
+    }
+};
+
+// ==================== DELETE ACCOUNT ====================
+
+const deleteAccount = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { password, confirm_delete } = req.body;
+
+        // Validate confirmation
+        if (!confirm_delete || confirm_delete !== 'DELETE') {
+            return res.status(400).json({
+                message: 'Please type DELETE to confirm account deletion',
+                required: 'confirm_delete must be "DELETE"'
+            });
+        }
+
+        // Get user
+        const user = await getUserById(userId);
+        if (!user || user.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const u = user[0];
+
+        // Check if user has password (local account)
+        if (u.provider === 'local' && u.password) {
+            // Local account - require password verification
+            if (!password) {
+                return res.status(400).json({
+                    message: 'Password is required to delete your account'
+                });
+            }
+
+            const isMatch = await bcrypt.compare(password, u.password);
+            if (!isMatch) {
+                return res.status(400).json({ message: 'Invalid password. Account deletion cancelled.' });
+            }
+        } else if (u.provider === 'google' || !u.password) {
+            // Google account or no password - no password verification needed
+            // Just require the DELETE confirmation (already validated above)
+        }
+
+        // Blacklist current token
+        if (req.token) {
+            const decoded = jwt.decode(req.token);
+            if (decoded && decoded.exp) {
+                const expiresAt = new Date(decoded.exp * 1000);
+                await blacklistToken(req.token, userId, expiresAt);
+            }
+        }
+
+        // Delete the account
+        await deleteUserAccount(userId);
+
+        res.json({
+            success: true,
+            message: 'Your account has been permanently deleted. We\'re sorry to see you go.',
+            deleted: {
+                email: u.email,
+                deleted_at: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('Delete account error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete account',
+            error: error.message
+        });
+    }
+};
+
+
+// ==================== GET NOTIFICATION PREFERENCES ====================
+
+const getNotificationPreferences = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const prefs = await getEmailNotificationPreference(userId);
+
+        if (!prefs || prefs.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const p = prefs[0];
+
+        res.json({
+            success: true,
+            preferences: {
+                email_notifications: p.email_notifications === 1 ? true : false,
+                email: p.email
+            }
+        });
+
+    } catch (error) {
+        console.error('Get notification preferences error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch notification preferences',
+            error: error.message
+        });
+    }
+};
+
+// ==================== TOGGLE EMAIL NOTIFICATIONS ====================
+
+const toggleNotifications = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { email_notifications } = req.body;
+
+        if (email_notifications === undefined) {
+            return res.status(400).json({
+                message: 'email_notifications field is required',
+                example: { email_notifications: true }
+            });
+        }
+
+        // Toggle in database
+        await toggleEmailNotifications(userId, email_notifications);
+
+        // Get updated preferences
+        const prefs = await getEmailNotificationPreference(userId);
+
+        res.json({
+            success: true,
+            message: email_notifications 
+                ? 'Email notifications enabled. You will now receive email updates.' 
+                : 'Email notifications disabled. You will no longer receive email updates.',
+            preferences: {
+                email_notifications: prefs[0].email_notifications === 1 ? true : false,
+                email: prefs[0].email
+            }
+        });
+
+    } catch (error) {
+        console.error('Toggle notifications error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update notification preferences',
+            error: error.message
+        });
+    }
+};
+
+// ==================== GET NOTIFICATION HISTORY ====================
+
+const getNotificationHistory = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const limit = parseInt(req.query.limit) || 20;
+        const history = await getUserNotificationHistory(userId, limit);
+
+        res.json({
+            success: true,
+            count: history.length,
+            notifications: history.map(n => ({
+                id: n.id,
+                type: n.notification_type,
+                subject: n.subject,
+                message: n.message,
+                status: n.status,
+                created_at: n.created_at
+            }))
+        });
+
+    } catch (error) {
+        console.error('Get notification history error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch notification history',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     registerUser,
     googleLogin,
@@ -440,5 +770,13 @@ module.exports = {
     adminLogin,
     verifyAdminOTP,
     resendAdminOTP,
-    staffLogin
+    staffLogin,
+    logoutUser,
+    getProfile,
+    updateProfile,
+    changePassword,
+    deleteAccount,
+    getNotificationPreferences,
+    toggleNotifications,
+    getNotificationHistory
 };
