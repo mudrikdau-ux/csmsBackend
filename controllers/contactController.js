@@ -74,6 +74,23 @@ const submitInquiry = async (req, res) => {
                 from: `"CleanSpark" <${process.env.EMAIL_USER}>`,
                 to: email,
                 subject: 'We received your inquiry - CleanSpark',
+                text: `Hello ${full_name},
+
+Thank you for contacting CleanSpark Cleaning Services. We have received your inquiry regarding "${subject}".
+
+Our team will review your message and get back to you within 24 hours.
+
+Inquiry Details:
+- Service: ${service_type}
+- Subject: ${subject}
+
+If you have any urgent questions, call us at +255 777 000 000.
+
+Best regards,
+CleanSpark Cleaning Services
+Stone Town, Zanzibar
+info@cleanspark.co.tz
++255 777 000 000`,
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #fff; border-radius: 10px; overflow: hidden;">
                         <div style="background: #1a5276; padding: 30px; text-align: center;">
@@ -89,6 +106,11 @@ const submitInquiry = async (req, res) => {
                                 <p style="color: #7f8c8d;">Subject: ${subject}</p>
                             </div>
                             <p style="color: #7f8c8d; font-size: 12px;">If you have any urgent questions, call us at +255 777 000 000.</p>
+                            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ecf0f1;">
+                            <p style="color: #95a5a6; font-size: 10px; text-align: center;">
+                                CleanSpark Cleaning Services | Stone Town, Zanzibar<br>
+                                info@cleanspark.co.tz | +255 777 000 000
+                            </p>
                         </div>
                         <div style="background: #1a5276; padding: 15px; text-align: center;">
                             <p style="color: #fff; margin: 0; font-size: 12px;">© ${new Date().getFullYear()} CleanSpark Cleaning Services</p>
@@ -99,7 +121,6 @@ const submitInquiry = async (req, res) => {
             console.log('✅ Confirmation email sent to:', email, 'Message ID:', info.messageId);
         } catch (emailError) {
             console.error('❌ Confirmation email failed:', emailError.message);
-            console.error('Full error:', emailError);
         }
 
         res.status(201).json({
@@ -134,7 +155,6 @@ const getInquiries = async (req, res) => {
 
         const inquiries = await getAllInquiries(filters);
         
-        // Get counts for tabs
         const allCount = await getInquiryCount({});
         const unreadCount = await getInquiryCount({ status: 'unread' });
         const readCount = await getInquiryCount({ status: 'read' });
@@ -194,7 +214,6 @@ const getSingleInquiry = async (req, res) => {
 
         const inq = inquiry[0];
 
-        // Mark as read if unread
         if (inq.status === 'unread') {
             await markAsRead(id);
         }
@@ -258,7 +277,7 @@ const replyToInquiry = async (req, res) => {
         // Save reply to database
         await addReply(id, reply_message.trim(), req.user.id);
 
-        // ✅ Send reply email to customer with detailed logging
+        // Send reply email to customer
         let emailSent = false;
         let emailErrorMsg = null;
         
@@ -267,6 +286,23 @@ const replyToInquiry = async (req, res) => {
                 from: `"CleanSpark Support" <${process.env.EMAIL_USER}>`,
                 to: inq.email,
                 subject: `Re: ${inq.subject} - CleanSpark`,
+                // ✅ Plain text version (reduces spam score)
+                text: `Hello ${inq.full_name},
+
+Thank you for contacting CleanSpark Cleaning Services.
+
+Here is our response to your inquiry regarding "${inq.subject}":
+
+${reply_message}
+
+---
+CleanSpark Cleaning Services
+Stone Town, Zanzibar
+info@cleanspark.co.tz
++255 777 000 000
+
+© ${new Date().getFullYear()} CleanSpark Cleaning Services. All rights reserved.`,
+                // HTML version
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #fff; border-radius: 10px; overflow: hidden;">
                         <div style="background: #27ae60; padding: 30px; text-align: center;">
@@ -278,10 +314,12 @@ const replyToInquiry = async (req, res) => {
                             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3498db;">
                                 <p style="color: #2c3e50; line-height: 1.6;">${reply_message.replace(/\n/g, '<br>')}</p>
                             </div>
-                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                                <p style="color: #7f8c8d; font-size: 12px;"><strong>Your original message:</strong> ${inq.message.substring(0, 200)}...</p>
-                            </div>
-                            <p style="color: #7f8c8d; font-size: 12px;">If you have further questions, feel free to reply to this email or call us at +255 777 000 000.</p>
+                            <p style="color: #7f8c8d; font-size: 12px;">If you have further questions, call us at +255 777 000 000.</p>
+                            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ecf0f1;">
+                            <p style="color: #95a5a6; font-size: 10px; text-align: center;">
+                                CleanSpark Cleaning Services | Stone Town, Zanzibar<br>
+                                info@cleanspark.co.tz | +255 777 000 000
+                            </p>
                         </div>
                         <div style="background: #1a5276; padding: 15px; text-align: center;">
                             <p style="color: #fff; margin: 0; font-size: 12px;">© ${new Date().getFullYear()} CleanSpark Cleaning Services</p>
@@ -293,14 +331,11 @@ const replyToInquiry = async (req, res) => {
             const info = await transporter.sendMail(mailOptions);
             console.log('✅ Reply email sent to:', inq.email);
             console.log('✅ Message ID:', info.messageId);
-            console.log('✅ Response:', info.response);
             emailSent = true;
         } catch (emailError) {
             emailErrorMsg = emailError.message;
-            console.error('❌ Reply email FAILED:');
-            console.error('❌ Error message:', emailError.message);
+            console.error('❌ Reply email FAILED:', emailError.message);
             console.error('❌ Error code:', emailError.code);
-            console.error('❌ Full error:', JSON.stringify(emailError, null, 2));
         }
 
         res.json({

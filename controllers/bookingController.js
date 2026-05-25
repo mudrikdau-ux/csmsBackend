@@ -13,6 +13,51 @@ const {
 const { getServiceById } = require('../models/serviceModel');
 const { getStaffById } = require('../models/userModel');
 const { sendBookingConfirmation, sendBookingStatusUpdate } = require('../utils/notifications');
+const { isAutoAssignEnabled } = require('../models/adminSettingsModel');
+const { sendNewBookingNotification } = require('./adminSettingsController');
+const db = require('../config/db');
+
+// ==================== AUTO-ASSIGN STAFF ====================
+
+const autoAssignStaff = async (bookingId, serviceDate, serviceTime) => {
+    try {
+        const enabled = await isAutoAssignEnabled();
+        if (!enabled) {
+            console.log('🤖 Auto-assign disabled, skipping...');
+            return null;
+        }
+
+        const staffMembers = await db.query(`SELECT * FROM users WHERE role = 'staff'`);
+        
+        if (!staffMembers || staffMembers.length === 0) {
+            console.log('🤖 No staff members available for auto-assign');
+            return null;
+        }
+
+        const staffWithLoads = await Promise.all(
+            staffMembers.map(async (staff) => {
+                const bookings = await db.query(
+                    `SELECT COUNT(*) as count FROM bookings WHERE assigned_staff_id = ? AND service_date = ? AND status NOT IN ('cancelled', 'completed')`,
+                    [staff.id, serviceDate]
+                );
+                return { ...staff, current_load: bookings[0].count };
+            })
+        );
+
+        staffWithLoads.sort((a, b) => a.current_load - b.current_load);
+        const selectedStaff = staffWithLoads[0];
+        const staffName = `${selectedStaff.first_name} ${selectedStaff.last_name}`;
+        
+        await assignStaffToBooking(bookingId, selectedStaff.id, staffName);
+
+        console.log(`🤖 Auto-assigned staff: ${staffName} (ID: ${selectedStaff.id}) to booking #${bookingId}`);
+        return { id: selectedStaff.id, name: staffName };
+
+    } catch (error) {
+        console.error('🤖 Auto-assign error:', error.message);
+        return null;
+    }
+};
 
 // ==================== CREATE BOOKING (AUTHENTICATED ONLY) ====================
 
@@ -82,7 +127,7 @@ const createBookingController = async (req, res) => {
 
         const bookingId = result.insertId;
 
-        // ✅ SEND BOOKING CONFIRMATION EMAIL
+        // ✅ SEND BOOKING CONFIRMATION EMAIL TO CUSTOMER
         sendBookingConfirmation(userId, {
             id: bookingId,
             customer_name: `${data.first_name} ${data.last_name}`,
@@ -93,6 +138,23 @@ const createBookingController = async (req, res) => {
             city: data.city,
             total_price: total,
             assigned_staff: null
+        });
+
+        // ✅ AUTO-ASSIGN STAFF (if enabled in settings)
+        const assignedStaff = await autoAssignStaff(bookingId, data.service_date, data.service_time);
+
+        // ✅ SEND ADMIN NOTIFICATION (if enabled in settings)
+        sendNewBookingNotification({
+            id: bookingId,
+            customer_name: `${data.first_name} ${data.last_name}`,
+            service_name: service.name,
+            service_date: data.service_date,
+            service_time: data.service_time,
+            address: data.address,
+            city: data.city,
+            total_price: total,
+            payment_method: data.payment_method,
+            assigned_staff: assignedStaff ? assignedStaff.name : null
         });
 
         res.status(201).json({
@@ -123,9 +185,13 @@ const createBookingController = async (req, res) => {
                     discount: discount,
                     total_price: total
                 },
-                status: 'pending',
+                status: assignedStaff ? 'confirmed' : 'pending',
                 service_date: data.service_date,
-                service_time: data.service_time
+                service_time: data.service_time,
+                auto_assigned: assignedStaff ? {
+                    id: assignedStaff.id,
+                    name: assignedStaff.name
+                } : null
             }
         });
 
@@ -158,10 +224,8 @@ const getMyBookings = async (req, res) => {
     try {
         const userId = req.user.id;
         
-        // Support multiple filter types
         let statusFilter = req.query.status;
         
-        // Map friendly filter names to actual statuses
         if (req.query.filter) {
             switch (req.query.filter) {
                 case 'upcoming':
@@ -199,7 +263,6 @@ const getMyBookings = async (req, res) => {
 
         const bookings = await getBookingsByUserId(userId, filters);
 
-        // Enrich bookings with service names and staff details
         const enrichedBookings = await Promise.all(
             bookings.map(async (b) => {
                 let serviceName = 'Unknown Service';
@@ -220,7 +283,6 @@ const getMyBookings = async (req, res) => {
                     } catch (err) {}
                 }
 
-                // Get assigned staff details if any
                 let assignedStaffDetails = null;
                 if (b.assigned_staff_id) {
                     try {
@@ -280,7 +342,6 @@ const getMyBookings = async (req, res) => {
             })
         );
 
-        // Get counts for each filter category
         const allBookings = await getBookingsByUserId(userId, {});
         const filterCounts = {
             all: allBookings.length,
@@ -331,7 +392,6 @@ const getAllBookingsController = async (req, res) => {
         });
         const total = countResult[0].count;
 
-        // Enrich bookings with service names
         const enrichedBookings = await Promise.all(
             bookings.map(async (b) => {
                 let serviceName = 'Unknown Service';
@@ -439,7 +499,6 @@ const getBookingDetails = async (req, res) => {
 
         const b = booking[0];
 
-        // Get service details
         let serviceDetails = null;
         if (b.service_id) {
             const serviceResult = await getServiceById(b.service_id);
@@ -457,7 +516,6 @@ const getBookingDetails = async (req, res) => {
             }
         }
 
-        // Get assigned staff details
         let staffDetails = null;
         if (b.assigned_staff_id) {
             const staffResult = await getStaffById(b.assigned_staff_id);
@@ -547,7 +605,6 @@ const assignStaff = async (req, res) => {
             return res.status(400).json({ message: 'Invalid staff ID' });
         }
 
-        // Check booking exists
         const booking = await getBookingById(id);
         if (booking.length === 0) {
             return res.status(404).json({ message: 'Booking not found' });
@@ -555,14 +612,12 @@ const assignStaff = async (req, res) => {
 
         const b = booking[0];
 
-        // Check if booking can be assigned
         if (['completed', 'cancelled'].includes(b.status)) {
             return res.status(400).json({ 
                 message: `Cannot assign staff to a ${b.status} booking` 
             });
         }
 
-        // Check staff exists and is active
         const staffResult = await getStaffById(staff_id);
         if (!staffResult || staffResult.length === 0) {
             return res.status(404).json({ message: 'Staff member not found' });
@@ -571,10 +626,8 @@ const assignStaff = async (req, res) => {
         const staff = staffResult[0];
         const staffName = `${staff.first_name} ${staff.last_name}`;
 
-        // Assign staff
         await assignStaffToBooking(id, staff_id, staffName);
 
-        // ✅ SEND NOTIFICATION TO CUSTOMER
         if (b.user_id) {
             sendBookingStatusUpdate(b.user_id, {
                 id: parseInt(id),
@@ -624,7 +677,6 @@ const removeStaff = async (req, res) => {
             return res.status(400).json({ message: 'Invalid booking ID' });
         }
 
-        // Check booking exists
         const booking = await getBookingById(id);
         if (booking.length === 0) {
             return res.status(404).json({ message: 'Booking not found' });
@@ -676,13 +728,11 @@ const updateBookingStatusController = async (req, res) => {
             });
         }
 
-        // Check if booking exists
         const booking = await getBookingById(id);
         if (booking.length === 0) {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
-        // Validate status transitions
         const currentStatus = booking[0].status;
         if (status === 'confirmed' && !booking[0].assigned_staff_id) {
             return res.status(400).json({ 
@@ -692,7 +742,6 @@ const updateBookingStatusController = async (req, res) => {
 
         await updateBookingStatus(id, status);
 
-        // ✅ SEND NOTIFICATION ON STATUS CHANGE
         if (booking[0].user_id) {
             sendBookingStatusUpdate(booking[0].user_id, {
                 id: parseInt(id),
@@ -776,7 +825,6 @@ const getReceipt = async (req, res) => {
 
         const b = booking[0];
 
-        // Check access (owner or admin)
         if (req.user.role !== 'admin' && b.user_id !== req.user.id) {
             return res.status(403).json({ 
                 message: 'Access denied. You can only view your own bookings.' 
@@ -800,7 +848,6 @@ const getReceipt = async (req, res) => {
             }
         }
 
-        // Get staff details for receipt
         let staffDetails = null;
         if (b.assigned_staff_id) {
             const staffResult = await getStaffById(b.assigned_staff_id);
