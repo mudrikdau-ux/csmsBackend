@@ -4,6 +4,7 @@ const {
     getAllBookings,
     getBookingsByUserId,
     updateBookingStatus,
+    updateBookingPaymentStatus,
     assignStaffToBooking,
     removeStaffAssignment,
     getBookingCount,
@@ -57,6 +58,25 @@ const autoAssignStaff = async (bookingId, serviceDate, serviceTime) => {
         console.error('🤖 Auto-assign error:', error.message);
         return null;
     }
+};
+
+// ==================== HELPER: STATUS LABELS ====================
+
+const getStatusLabel = (status) => {
+    const labels = {
+        'pending': 'Pending',
+        'confirmed': 'Upcoming',
+        'in_progress': 'In Progress',
+        'completed': 'Delivered',
+        'cancelled': 'Cancelled'
+    };
+    return labels[status] || status;
+};
+
+// ==================== HELPER: PAYMENT STATUS LABELS ====================
+
+const getPaymentStatusLabel = (status) => {
+    return status === 'paid' ? 'Paid ✅' : 'Unpaid ❌';
 };
 
 // ==================== CREATE BOOKING (AUTHENTICATED ONLY) ====================
@@ -122,7 +142,8 @@ const createBookingController = async (req, res) => {
             extras,
             discount,
             total_price: total,
-            status: 'pending'
+            status: 'pending',
+            payment_status: 'unpaid'
         });
 
         const bookingId = result.insertId;
@@ -185,7 +206,10 @@ const createBookingController = async (req, res) => {
                     discount: discount,
                     total_price: total
                 },
+                payment_status: 'unpaid',
+                payment_status_label: getPaymentStatusLabel('unpaid'),
                 status: assignedStaff ? 'confirmed' : 'pending',
+                status_label: getStatusLabel(assignedStaff ? 'confirmed' : 'pending'),
                 service_date: data.service_date,
                 service_time: data.service_time,
                 auto_assigned: assignedStaff ? {
@@ -203,19 +227,6 @@ const createBookingController = async (req, res) => {
             error: error.message 
         });
     }
-};
-
-// ==================== HELPER: STATUS LABELS ====================
-
-const getStatusLabel = (status) => {
-    const labels = {
-        'pending': 'Pending',
-        'confirmed': 'Upcoming',
-        'in_progress': 'In Progress',
-        'completed': 'Delivered',
-        'cancelled': 'Cancelled'
-    };
-    return labels[status] || status;
 };
 
 // ==================== GET MY BOOKINGS (ENHANCED) ====================
@@ -255,6 +266,7 @@ const getMyBookings = async (req, res) => {
         
         const filters = {
             status: statusFilter,
+            payment_status: req.query.payment_status,
             date_from: req.query.date_from,
             date_to: req.query.date_to,
             limit: req.query.limit || 50,
@@ -332,7 +344,9 @@ const getMyBookings = async (req, res) => {
                         base_price: parseFloat(b.base_price),
                         extras: parseFloat(b.extras),
                         discount: parseFloat(b.discount),
-                        total_price: parseFloat(b.total_price)
+                        total_price: parseFloat(b.total_price),
+                        payment_status: b.payment_status,
+                        payment_status_label: getPaymentStatusLabel(b.payment_status)
                     },
                     status: b.status,
                     status_label: getStatusLabel(b.status),
@@ -350,7 +364,8 @@ const getMyBookings = async (req, res) => {
             in_progress: allBookings.filter(b => b.status === 'in_progress').length,
             completed: allBookings.filter(b => b.status === 'completed').length,
             cancelled: allBookings.filter(b => b.status === 'cancelled').length,
-            unpaid: allBookings.filter(b => b.status === 'pending').length
+            unpaid: allBookings.filter(b => b.payment_status === 'unpaid').length,
+            paid: allBookings.filter(b => b.payment_status === 'paid').length
         };
 
         res.json({
@@ -377,6 +392,7 @@ const getAllBookingsController = async (req, res) => {
     try {
         const filters = {
             status: req.query.status,
+            payment_status: req.query.payment_status,
             date_from: req.query.date_from,
             date_to: req.query.date_to,
             user_id: req.query.user_id,
@@ -388,6 +404,7 @@ const getAllBookingsController = async (req, res) => {
         const bookings = await getAllBookings(filters);
         const countResult = await getBookingCount({ 
             status: req.query.status,
+            payment_status: req.query.payment_status,
             assigned_staff_id: req.query.assigned_staff_id
         });
         const total = countResult[0].count;
@@ -446,7 +463,9 @@ const getAllBookingsController = async (req, res) => {
                         base_price: parseFloat(b.base_price),
                         extras: parseFloat(b.extras),
                         discount: parseFloat(b.discount),
-                        total_price: parseFloat(b.total_price)
+                        total_price: parseFloat(b.total_price),
+                        payment_status: b.payment_status,
+                        payment_status_label: getPaymentStatusLabel(b.payment_status)
                     },
                     status: b.status,
                     status_label: getStatusLabel(b.status),
@@ -465,6 +484,7 @@ const getAllBookingsController = async (req, res) => {
             count: bookings.length,
             filters_applied: {
                 status: req.query.status || 'all',
+                payment_status: req.query.payment_status || 'all',
                 date_from: req.query.date_from || null,
                 date_to: req.query.date_to || null
             },
@@ -571,7 +591,9 @@ const getBookingDetails = async (req, res) => {
                     base_price: parseFloat(b.base_price),
                     extras: parseFloat(b.extras),
                     discount: parseFloat(b.discount),
-                    total_price: parseFloat(b.total_price)
+                    total_price: parseFloat(b.total_price),
+                    payment_status: b.payment_status,
+                    payment_status_label: getPaymentStatusLabel(b.payment_status)
                 },
                 status: b.status,
                 status_label: getStatusLabel(b.status),
@@ -653,7 +675,8 @@ const assignStaff = async (req, res) => {
                     staff_type: staff.staff_type,
                     photo: staff.photo ? `${req.protocol}://${req.get('host')}/uploads/staff/${staff.photo}` : null
                 },
-                status: 'confirmed'
+                status: 'confirmed',
+                status_label: getStatusLabel('confirmed')
             }
         });
 
@@ -695,7 +718,8 @@ const removeStaff = async (req, res) => {
             message: 'Staff removed from booking',
             booking: {
                 id: parseInt(id),
-                status: 'pending'
+                status: 'pending',
+                status_label: getStatusLabel('pending')
             }
         });
 
@@ -773,6 +797,51 @@ const updateBookingStatusController = async (req, res) => {
     }
 };
 
+// ==================== ADMIN: UPDATE PAYMENT STATUS ====================
+
+const updatePaymentStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { payment_status } = req.body;
+
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ message: 'Invalid booking ID' });
+        }
+
+        if (!['paid', 'unpaid'].includes(payment_status)) {
+            return res.status(400).json({ 
+                message: 'Invalid payment status',
+                valid_statuses: ['paid', 'unpaid']
+            });
+        }
+
+        const booking = await getBookingById(id);
+        if (booking.length === 0) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        await updateBookingPaymentStatus(id, payment_status);
+
+        res.json({
+            success: true,
+            message: `Payment marked as ${payment_status}`,
+            booking: {
+                id: parseInt(id),
+                payment_status,
+                payment_status_label: getPaymentStatusLabel(payment_status)
+            }
+        });
+
+    } catch (error) {
+        console.error('Update payment status error:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to update payment status', 
+            error: error.message 
+        });
+    }
+};
+
 // ==================== GET BOOKING STATISTICS ====================
 
 const getBookingStats = async (req, res) => {
@@ -783,6 +852,8 @@ const getBookingStats = async (req, res) => {
         const inProgressBookings = await getBookingCount({ status: 'in_progress' });
         const completedBookings = await getBookingCount({ status: 'completed' });
         const cancelledBookings = await getBookingCount({ status: 'cancelled' });
+        const paidBookings = await getBookingCount({ payment_status: 'paid' });
+        const unpaidBookings = await getBookingCount({ payment_status: 'unpaid' });
 
         res.json({
             success: true,
@@ -793,7 +864,8 @@ const getBookingStats = async (req, res) => {
                 in_progress: inProgressBookings[0].count,
                 delivered: completedBookings[0].count,
                 cancelled: cancelledBookings[0].count,
-                unpaid: pendingBookings[0].count
+                paid: paidBookings[0].count,
+                unpaid: unpaidBookings[0].count
             }
         });
 
@@ -896,7 +968,9 @@ const getReceipt = async (req, res) => {
                     extras: parseFloat(b.extras),
                     discount: parseFloat(b.discount),
                     total_price: parseFloat(b.total_price),
-                    payment_method: b.payment_method
+                    payment_method: b.payment_method,
+                    payment_status: b.payment_status,
+                    payment_status_label: getPaymentStatusLabel(b.payment_status)
                 },
                 status: b.status,
                 status_label: getStatusLabel(b.status),
@@ -948,7 +1022,7 @@ const cancelMyBooking = async (req, res) => {
             message: 'Booking cancelled successfully',
             booking_id: parseInt(id),
             status: 'cancelled',
-            status_label: 'Cancelled'
+            status_label: getStatusLabel('cancelled')
         });
 
     } catch (error) {
@@ -1016,7 +1090,9 @@ const getStaffAssignments = async (req, res) => {
                     instructions: b.instructions,
                     payment: {
                         method: b.payment_method,
-                        total_price: parseFloat(b.total_price)
+                        total_price: parseFloat(b.total_price),
+                        payment_status: b.payment_status,
+                        payment_status_label: getPaymentStatusLabel(b.payment_status)
                     },
                     status: b.status,
                     status_label: getStatusLabel(b.status),
@@ -1049,6 +1125,7 @@ module.exports = {
     assignStaff,
     removeStaff,
     updateBookingStatusController,
+    updatePaymentStatus,
     getBookingStats,
     getReceipt,
     cancelMyBooking,

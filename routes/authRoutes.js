@@ -6,6 +6,8 @@ const {
     googleLogin,
     loginUser,
     verifyUserOTP,
+    forgotPassword,
+    resetPassword,
     adminLogin,
     verifyAdminOTP,
     resendAdminOTP,
@@ -27,6 +29,10 @@ const { verifyToken } = require('../middleware/auth');
 router.post('/register', validateRegister, registerUser);
 router.post('/login', validateLogin, loginUser);
 router.post('/verify-otp', verifyUserOTP);
+
+// ==================== PASSWORD RESET ====================
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // ==================== GOOGLE AUTH ====================
 router.post('/google-login', googleLogin);

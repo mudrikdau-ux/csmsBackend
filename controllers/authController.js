@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const client = require('../config/google');
 const { hashPassword } = require('../utils/hash');
@@ -15,6 +17,9 @@ const {
     saveOTP,
     verifyOTP,
     clearOTP,
+    savePasswordResetToken,
+    findUserByResetToken,
+    clearResetToken,
     blacklistToken,
     deleteUserAccount,
     getEmailNotificationPreference,
@@ -25,6 +30,15 @@ const {
     updateUserProfile,
     getUserById
 } = require('../models/userModel');
+
+// Email transporter for password reset
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 // ==================== REGISTER USER ====================
 
@@ -212,6 +226,137 @@ const verifyUserOTP = async (req, res) => {
     } catch (error) {
         console.error('OTP verification error:', error);
         res.status(500).json({ message: 'Verification failed. Please try again.' });
+    }
+};
+
+// ==================== FORGOT PASSWORD ====================
+
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        const users = await findUserByEmail(email);
+        
+        // Always return success even if email not found (security)
+        if (users.length === 0) {
+            return res.json({
+                success: true,
+                message: 'If an account with that email exists, a password reset link has been sent.'
+            });
+        }
+
+        const user = users[0];
+
+        // Don't send reset for Google-only accounts
+        if (!user.password) {
+            return res.json({
+                success: true,
+                message: 'If an account with that email exists, a password reset link has been sent.'
+            });
+        }
+
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+
+        // Save token
+        await savePasswordResetToken(email, resetToken, resetTokenExpiry);
+
+        // Send reset email
+        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+        
+        await transporter.sendMail({
+            from: `"CleanSpark Security" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: 'Reset Your Password - CleanSpark',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #fff; border-radius: 10px; overflow: hidden;">
+                    <div style="background: #1a5276; padding: 30px; text-align: center;">
+                        <h1 style="color: #fff; margin: 0;">🔐 Reset Your Password</h1>
+                    </div>
+                    <div style="padding: 30px;">
+                        <h2 style="color: #2c3e50;">Hello ${user.first_name},</h2>
+                        <p style="color: #34495e;">We received a request to reset your password. Click the button below to reset it:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${resetLink}" style="background: #3498db; color: #fff; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-size: 16px;">Reset Password</a>
+                        </div>
+                        <p style="color: #7f8c8d; font-size: 12px;">This link expires in 30 minutes.</p>
+                        <p style="color: #e74c3c; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+                    </div>
+                    <div style="background: #1a5276; padding: 15px; text-align: center;">
+                        <p style="color: #fff; margin: 0; font-size: 12px;">© ${new Date().getFullYear()} CleanSpark</p>
+                    </div>
+                </div>
+            `
+        });
+
+        res.json({
+            success: true,
+            message: 'If an account with that email exists, a password reset link has been sent.'
+        });
+
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to process request', 
+            error: error.message 
+        });
+    }
+};
+
+// ==================== RESET PASSWORD ====================
+
+const resetPassword = async (req, res) => {
+    try {
+        const { token, new_password, confirm_password } = req.body;
+
+        if (!token || !new_password || !confirm_password) {
+            return res.status(400).json({ message: 'Token and new password are required' });
+        }
+
+        if (new_password !== confirm_password) {
+            return res.status(400).json({ message: 'Passwords do not match' });
+        }
+
+        if (new_password.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters' });
+        }
+
+        // Find user by reset token
+        const users = await findUserByResetToken(token);
+
+        if (users.length === 0) {
+            return res.status(400).json({ 
+                message: 'Invalid or expired reset token. Please request a new one.' 
+            });
+        }
+
+        const user = users[0];
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+        await updateUserPassword(user.id, hashedPassword);
+
+        // Clear reset token
+        await clearResetToken(user.id);
+
+        res.json({
+            success: true,
+            message: 'Password reset successful. You can now login with your new password.'
+        });
+
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to reset password', 
+            error: error.message 
+        });
     }
 };
 
@@ -777,6 +922,8 @@ module.exports = {
     googleLogin,
     loginUser,
     verifyUserOTP,
+    forgotPassword,
+    resetPassword,
     adminLogin,
     verifyAdminOTP,
     resendAdminOTP,

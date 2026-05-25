@@ -12,6 +12,7 @@ const {
     assignStaff,
     removeStaff,
     updateBookingStatusController,
+    updatePaymentStatus,
     getBookingStats,
     getReceipt,
     cancelMyBooking,
@@ -45,6 +46,9 @@ router.get('/:id', verifyAdmin, getBookingDetails);
 
 // Update booking status
 router.put('/:id/status', verifyAdmin, updateBookingStatusController);
+
+// Update payment status
+router.put('/:id/payment-status', verifyAdmin, updatePaymentStatus);
 
 // Assign staff to booking
 router.post('/:id/assign-staff', verifyAdmin, assignStaff);

@@ -129,6 +129,29 @@ const clearOTP = async (email) => {
     );
 };
 
+// ==================== PASSWORD RESET ====================
+
+const savePasswordResetToken = async (email, token, expiry) => {
+    return db.query(
+        `UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?`,
+        [token, expiry, email]
+    );
+};
+
+const findUserByResetToken = async (token) => {
+    return db.query(
+        `SELECT * FROM users WHERE reset_token = ? AND reset_token_expiry > NOW()`,
+        [token]
+    );
+};
+
+const clearResetToken = async (userId) => {
+    return db.query(
+        `UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = ?`,
+        [userId]
+    );
+};
+
 // ==================== LOGOUT ====================
 
 const blacklistToken = async (token, userId, expiresAt) => {
@@ -162,7 +185,7 @@ const deleteUserAccount = async (userId) => {
     }
 
     await db.query(`DELETE FROM feedbacks WHERE user_id = ?`, [userId]);
-    await db.query(`UPDATE users SET otp = NULL, otp_expiry = NULL WHERE id = ?`, [userId]);
+    await db.query(`UPDATE users SET otp = NULL, otp_expiry = NULL, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?`, [userId]);
     await db.query(`DELETE FROM token_blacklist WHERE user_id = ?`, [userId]);
     await db.query(`DELETE FROM users WHERE id = ?`, [userId]);
     
@@ -243,7 +266,6 @@ const updateUserProfile = async (userId, data) => {
     ]);
 };
 
-// ✅✅✅ FIXED: Added password, profile_photo, email_notifications, web_notifications ✅✅✅
 const getUserById = async (userId) => {
     return db.query(
         `SELECT id, first_name, last_name, email, password, address, gender, phone, role, provider, profile_photo, email_notifications, web_notifications, created_at 
@@ -266,6 +288,9 @@ module.exports = {
     saveOTP,
     verifyOTP,
     clearOTP,
+    savePasswordResetToken,
+    findUserByResetToken,
+    clearResetToken,
     blacklistToken,
     isTokenBlacklisted,
     deleteUserAccount,

@@ -11,8 +11,8 @@ const createBooking = async (data) => {
             first_name, last_name, email, phone,
             payment_method,
             base_price, extras, discount, total_price,
-            status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            status, payment_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     return db.query(sql, [
@@ -40,7 +40,8 @@ const createBooking = async (data) => {
         data.extras,
         data.discount,
         data.total_price,
-        data.status || 'pending'
+        data.status || 'pending',
+        data.payment_status || 'unpaid'
     ]);
 };
 
@@ -52,37 +53,17 @@ const getAllBookings = async (filters = {}) => {
     let sql = `SELECT * FROM bookings WHERE 1=1`;
     const values = [];
 
-    if (filters.user_id) {
-        sql += ` AND user_id = ?`;
-        values.push(filters.user_id);
-    }
-    if (filters.status) {
-        sql += ` AND status = ?`;
-        values.push(filters.status);
-    }
-    if (filters.date_from) {
-        sql += ` AND service_date >= ?`;
-        values.push(filters.date_from);
-    }
-    if (filters.date_to) {
-        sql += ` AND service_date <= ?`;
-        values.push(filters.date_to);
-    }
-    if (filters.assigned_staff_id) {
-        sql += ` AND assigned_staff_id = ?`;
-        values.push(filters.assigned_staff_id);
-    }
+    if (filters.user_id) { sql += ` AND user_id = ?`; values.push(filters.user_id); }
+    if (filters.status) { sql += ` AND status = ?`; values.push(filters.status); }
+    if (filters.payment_status) { sql += ` AND payment_status = ?`; values.push(filters.payment_status); }
+    if (filters.date_from) { sql += ` AND service_date >= ?`; values.push(filters.date_from); }
+    if (filters.date_to) { sql += ` AND service_date <= ?`; values.push(filters.date_to); }
+    if (filters.assigned_staff_id) { sql += ` AND assigned_staff_id = ?`; values.push(filters.assigned_staff_id); }
 
     sql += ` ORDER BY created_at DESC`;
 
-    if (filters.limit) {
-        sql += ` LIMIT ?`;
-        values.push(parseInt(filters.limit));
-    }
-    if (filters.offset) {
-        sql += ` OFFSET ?`;
-        values.push(parseInt(filters.offset));
-    }
+    if (filters.limit) { sql += ` LIMIT ?`; values.push(parseInt(filters.limit)); }
+    if (filters.offset) { sql += ` OFFSET ?`; values.push(parseInt(filters.offset)); }
 
     return db.query(sql, values);
 };
@@ -91,78 +72,45 @@ const getBookingsByUserId = async (userId, filters = {}) => {
     let sql = `SELECT * FROM bookings WHERE user_id = ?`;
     const values = [userId];
 
-    if (filters.status) {
-        sql += ` AND status = ?`;
-        values.push(filters.status);
-    }
-    if (filters.service_id) {
-        sql += ` AND service_id = ?`;
-        values.push(filters.service_id);
-    }
-    if (filters.service_date) {
-        sql += ` AND service_date = ?`;
-        values.push(filters.service_date);
-    }
-    if (filters.date_from) {
-        sql += ` AND service_date >= ?`;
-        values.push(filters.date_from);
-    }
-    if (filters.date_to) {
-        sql += ` AND service_date <= ?`;
-        values.push(filters.date_to);
-    }
+    if (filters.status) { sql += ` AND status = ?`; values.push(filters.status); }
+    if (filters.payment_status) { sql += ` AND payment_status = ?`; values.push(filters.payment_status); }
+    if (filters.service_id) { sql += ` AND service_id = ?`; values.push(filters.service_id); }
+    if (filters.service_date) { sql += ` AND service_date = ?`; values.push(filters.service_date); }
+    if (filters.date_from) { sql += ` AND service_date >= ?`; values.push(filters.date_from); }
+    if (filters.date_to) { sql += ` AND service_date <= ?`; values.push(filters.date_to); }
 
     sql += ` ORDER BY created_at DESC`;
 
-    if (filters.limit) {
-        sql += ` LIMIT ?`;
-        values.push(parseInt(filters.limit));
-    }
-    if (filters.offset) {
-        sql += ` OFFSET ?`;
-        values.push(parseInt(filters.offset));
-    }
+    if (filters.limit) { sql += ` LIMIT ?`; values.push(parseInt(filters.limit)); }
+    if (filters.offset) { sql += ` OFFSET ?`; values.push(parseInt(filters.offset)); }
 
     return db.query(sql, values);
 };
 
 const updateBookingStatus = async (id, status) => {
-    return db.query(
-        `UPDATE bookings SET status = ? WHERE id = ?`,
-        [status, id]
-    );
+    return db.query(`UPDATE bookings SET status = ? WHERE id = ?`, [status, id]);
+};
+
+const updateBookingPaymentStatus = async (id, payment_status) => {
+    return db.query(`UPDATE bookings SET payment_status = ? WHERE id = ?`, [payment_status, id]);
 };
 
 const assignStaffToBooking = async (bookingId, staffId, staffName) => {
-    return db.query(
-        `UPDATE bookings SET assigned_staff_id = ?, assigned_staff_name = ?, status = 'confirmed' WHERE id = ?`,
-        [staffId, staffName, bookingId]
-    );
+    return db.query(`UPDATE bookings SET assigned_staff_id = ?, assigned_staff_name = ?, status = 'confirmed' WHERE id = ?`, [staffId, staffName, bookingId]);
 };
 
 const removeStaffAssignment = async (bookingId) => {
-    return db.query(
-        `UPDATE bookings SET assigned_staff_id = NULL, assigned_staff_name = NULL, status = 'pending' WHERE id = ?`,
-        [bookingId]
-    );
+    return db.query(`UPDATE bookings SET assigned_staff_id = NULL, assigned_staff_name = NULL, status = 'pending' WHERE id = ?`, [bookingId]);
 };
 
 const getBookingCount = async (filters = {}) => {
     let sql = `SELECT COUNT(*) as count FROM bookings WHERE 1=1`;
     const values = [];
 
-    if (filters.status) {
-        sql += ` AND status = ?`;
-        values.push(filters.status);
-    }
-    if (filters.user_id) {
-        sql += ` AND user_id = ?`;
-        values.push(filters.user_id);
-    }
-    if (filters.assigned_staff_id) {
-        sql += ` AND assigned_staff_id = ?`;
-        values.push(filters.assigned_staff_id);
-    }
+    if (filters.status) { sql += ` AND status = ?`; values.push(filters.status); }
+    if (filters.payment_status) { sql += ` AND payment_status = ?`; values.push(filters.payment_status); }
+    if (filters.user_id) { sql += ` AND user_id = ?`; values.push(filters.user_id); }
+    if (filters.assigned_staff_id) { sql += ` AND assigned_staff_id = ?`; values.push(filters.assigned_staff_id); }
 
     return db.query(sql, values);
 };
@@ -171,18 +119,9 @@ const getStaffBookings = async (staffId, filters = {}) => {
     let sql = `SELECT * FROM bookings WHERE assigned_staff_id = ?`;
     const values = [staffId];
 
-    if (filters.status) {
-        sql += ` AND status = ?`;
-        values.push(filters.status);
-    }
-    if (filters.date_from) {
-        sql += ` AND service_date >= ?`;
-        values.push(filters.date_from);
-    }
-    if (filters.date_to) {
-        sql += ` AND service_date <= ?`;
-        values.push(filters.date_to);
-    }
+    if (filters.status) { sql += ` AND status = ?`; values.push(filters.status); }
+    if (filters.date_from) { sql += ` AND service_date >= ?`; values.push(filters.date_from); }
+    if (filters.date_to) { sql += ` AND service_date <= ?`; values.push(filters.date_to); }
 
     sql += ` ORDER BY service_date ASC, service_time ASC`;
 
@@ -195,6 +134,7 @@ module.exports = {
     getAllBookings,
     getBookingsByUserId,
     updateBookingStatus,
+    updateBookingPaymentStatus,
     assignStaffToBooking,
     removeStaffAssignment,
     getBookingCount,
