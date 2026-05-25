@@ -87,7 +87,7 @@ CREATE TABLE `bookings` (
   PRIMARY KEY (`id`),
   KEY `idx_assigned_staff` (`assigned_staff_id`),
   CONSTRAINT `fk_booking_staff` FOREIGN KEY (`assigned_staff_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -96,7 +96,7 @@ CREATE TABLE `bookings` (
 
 LOCK TABLES `bookings` WRITE;
 /*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
-INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'confirmed',20,'MO 11','2026-04-29 09:49:07'),(2,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 09:52:53'),(3,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:39'),(4,NULL,3,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:59'),(5,22,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-05 08:42:39'),(6,25,4,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-14 09:56:14'),(7,25,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'in_progress',20,'MO 11','2026-05-14 10:40:30');
+INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','partial',30000.00,15000.00,1500.00,43500.00,'confirmed',20,'MO 11','2026-04-29 09:49:07'),(2,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 09:52:53'),(3,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:39'),(4,NULL,3,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:59'),(5,22,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-05 08:42:39'),(6,25,4,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','paid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-14 09:56:14'),(7,25,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','paid',30000.00,15000.00,1500.00,43500.00,'in_progress',20,'MO 11','2026-05-14 10:40:30'),(8,26,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','MO','11','molittle1011@gmail.com','0677532140','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-14 13:47:57');
 /*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -278,7 +278,7 @@ CREATE TABLE `notification_logs` (
   KEY `idx_type` (`notification_type`),
   KEY `idx_created_at` (`created_at`),
   CONSTRAINT `notification_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -287,8 +287,50 @@ CREATE TABLE `notification_logs` (
 
 LOCK TABLES `notification_logs` WRITE;
 /*!40000 ALTER TABLE `notification_logs` DISABLE KEYS */;
-INSERT INTO `notification_logs` VALUES (1,25,'booking_confirmation','Booking Confirmed - #7','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello John Doe,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #7\n                    Service: Deep House Cleaning\n                    Date: 2026-05-15\n                    Time: 10:00\n                    Address: Kijitonyama Street, Dar es Salaam\n                    Total: TZS 43,500\n                    \n   ','molittle1011@gmail.com','sent','2026-05-14 10:40:32'),(2,25,'booking_status_update','Booking #7 - Confirmed ✅','\n        \n            \n                Booking Status Update\n            \n            \n                Hello,\n                Your booking status has been updated:\n                \n                \n                    Confirmed ✅\n                    Booking #7 - Cleaning Service\n                    Fri May 15 2026 00:00:00 GMT+0300 (East Africa Time) at 10:00:00\n                \n\n                Login to your account to view full details.\n            \n            \n                © 2026 CleanSpa','molittle1011@gmail.com','sent','2026-05-14 10:51:33'),(3,25,'booking_status_update','Booking #7 - In Progress ?','\n        \n            \n                Booking Status Update\n            \n            \n                Hello,\n                Your booking status has been updated:\n                \n                \n                    In Progress ?\n                    Booking #7 - Cleaning Service\n                    Fri May 15 2026 00:00:00 GMT+0300 (East Africa Time) at 10:00:00\n                \n\n                Login to your account to view full details.\n            \n            \n                © 2026 Clean','molittle1011@gmail.com','sent','2026-05-14 10:55:18'),(4,25,'booking_status_update','Booking #7 - Cancelled ❌','\n        \n            \n                Booking Status Update\n            \n            \n                Hello,\n                Your booking status has been updated:\n                \n                \n                    Cancelled ❌\n                    Booking #7 - Cleaning Service\n                    Fri May 15 2026 00:00:00 GMT+0300 (East Africa Time) at 10:00:00\n                \n\n                Login to your account to view full details.\n            \n            \n                © 2026 CleanSpa','molittle1011@gmail.com','sent','2026-05-14 10:56:01'),(5,25,'booking_status_update','Booking #7 - In Progress ?','\n        \n            \n                Booking Status Update\n            \n            \n                Hello,\n                Your booking status has been updated:\n                \n                \n                    In Progress ?\n                    Booking #7 - Cleaning Service\n                    Fri May 15 2026 00:00:00 GMT+0300 (East Africa Time) at 10:00:00\n                \n\n                Login to your account to view full details.\n            \n            \n                © 2026 Clean','molittle1011@gmail.com','sent','2026-05-14 11:00:27'),(6,25,'booking_status_update','Booking #7 - Cancelled ❌','\n        \n            \n                Booking Status Update\n            \n            \n                Hello,\n                Your booking status has been updated:\n                \n                \n                    Cancelled ❌\n                    Booking #7 - Cleaning Service\n                    Fri May 15 2026 00:00:00 GMT+0300 (East Africa Time) at 10:00:00\n                \n\n                Login to your account to view full details.\n            \n            \n                © 2026 CleanSpa','molittle1011@gmail.com','sent','2026-05-14 11:09:14'),(7,25,'booking_status_update','Booking #7 - In Progress ?','\n        \n            \n                Booking Status Update\n            \n            \n                Hello,\n                Your booking status has been updated:\n                \n                \n                    In Progress ?\n                    Booking #7 - Cleaning Service\n                    Fri May 15 2026 00:00:00 GMT+0300 (East Africa Time) at 10:00:00\n                \n\n                Login to your account to view full details.\n            \n            \n                © 2026 Clean','molittle1011@gmail.com','sent','2026-05-14 11:10:26'),(8,25,'booking_status_update','Booking #7 - Cancelled ❌','\n        \n            \n                Booking Status Update\n            \n            \n                Hello,\n                Your booking status has been updated:\n                \n                \n                    Cancelled ❌\n                    Booking #7 - Cleaning Service\n                    Fri May 15 2026 00:00:00 GMT+0300 (East Africa Time) at 10:00:00\n                \n\n                Login to your account to view full details.\n            \n            \n                © 2026 CleanSpa','molittle1011@gmail.com','sent','2026-05-14 11:12:47'),(9,25,'booking_status_update','Booking #7 - Cancelled ❌','\n        \n            \n                Booking Status Update\n            \n            \n                Hello,\n                Your booking status has been updated:\n                \n                \n                    Cancelled ❌\n                    Booking #7 - Cleaning Service\n                    Fri May 15 2026 00:00:00 GMT+0300 (East Africa Time) at 10:00:00\n                \n\n                Login to your account to view full details.\n            \n            \n                © 2026 CleanSpa','molittle1011@gmail.com','skipped','2026-05-14 11:22:09'),(10,25,'booking_status_update','Booking #7 - In Progress ?','\n        \n            \n                Booking Status Update\n            \n            \n                Hello,\n                Your booking status has been updated:\n                \n                \n                    In Progress ?\n                    Booking #7 - Cleaning Service\n                    Fri May 15 2026 00:00:00 GMT+0300 (East Africa Time) at 10:00:00\n                \n\n                Login to your account to view full details.\n            \n            \n                © 2026 Clean','molittle1011@gmail.com','sent','2026-05-14 11:23:49');
+INSERT INTO `notification_logs` VALUES (11,26,'booking_confirmation','Booking Confirmed - #8','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello MO 11,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #8\n                    Service: Deep House Cleaning\n                    Date: 2026-05-15\n                    Time: 10:00\n                    Address: Kijitonyama Street, Dar es Salaam\n                    Total: TZS 43,500\n                    \n      ','molittle1011@gmail.com','sent','2026-05-14 13:48:00');
 /*!40000 ALTER TABLE `notification_logs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `payments`
+--
+
+DROP TABLE IF EXISTS `payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `booking_id` int DEFAULT NULL,
+  `payment_number` varchar(50) NOT NULL,
+  `transaction_id` varchar(100) DEFAULT NULL,
+  `reference` varchar(100) DEFAULT NULL,
+  `amount` decimal(12,2) NOT NULL,
+  `payment_method` enum('cash','card','mobile_money','bank_transfer') NOT NULL DEFAULT 'cash',
+  `payment_status` enum('pending','completed','failed','refunded') DEFAULT 'completed',
+  `payment_date` date NOT NULL,
+  `notes` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `payment_number` (`payment_number`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_booking_id` (`booking_id`),
+  KEY `idx_payment_date` (`payment_date`),
+  KEY `idx_payment_status` (`payment_status`),
+  KEY `idx_payment_number` (`payment_number`),
+  CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `payments_ibfk_2` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `payments`
+--
+
+LOCK TABLES `payments` WRITE;
+/*!40000 ALTER TABLE `payments` DISABLE KEYS */;
+/*!40000 ALTER TABLE `payments` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -324,6 +366,71 @@ CREATE TABLE `reports` (
 LOCK TABLES `reports` WRITE;
 /*!40000 ALTER TABLE `reports` DISABLE KEYS */;
 /*!40000 ALTER TABLE `reports` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `saved_locations`
+--
+
+DROP TABLE IF EXISTS `saved_locations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `saved_locations` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `location_name` varchar(100) NOT NULL,
+  `address` text NOT NULL,
+  `city` varchar(100) NOT NULL,
+  `landmark` varchar(255) DEFAULT NULL,
+  `latitude` decimal(10,8) DEFAULT NULL,
+  `longitude` decimal(11,8) DEFAULT NULL,
+  `is_default` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  CONSTRAINT `saved_locations_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `saved_locations`
+--
+
+LOCK TABLES `saved_locations` WRITE;
+/*!40000 ALTER TABLE `saved_locations` DISABLE KEYS */;
+/*!40000 ALTER TABLE `saved_locations` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `saved_payment_methods`
+--
+
+DROP TABLE IF EXISTS `saved_payment_methods`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `saved_payment_methods` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `payment_type` enum('cash','card','mobile_money','bank_transfer') NOT NULL,
+  `card_last_four` varchar(4) DEFAULT NULL,
+  `mobile_number` varchar(20) DEFAULT NULL,
+  `bank_name` varchar(100) DEFAULT NULL,
+  `account_number` varchar(50) DEFAULT NULL,
+  `is_default` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  CONSTRAINT `saved_payment_methods_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `saved_payment_methods`
+--
+
+LOCK TABLES `saved_payment_methods` WRITE;
+/*!40000 ALTER TABLE `saved_payment_methods` DISABLE KEYS */;
+/*!40000 ALTER TABLE `saved_payment_methods` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -441,11 +548,13 @@ CREATE TABLE `users` (
   `provider` varchar(10) DEFAULT 'local',
   `phone` varchar(20) DEFAULT NULL,
   `email_notifications` tinyint(1) DEFAULT '1',
+  `web_notifications` tinyint(1) DEFAULT '1',
   `photo` varchar(255) DEFAULT NULL,
+  `profile_photo` varchar(255) DEFAULT NULL,
   `staff_type` enum('normal','supervisor') DEFAULT 'normal',
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -454,7 +563,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,'user','local',NULL,1,NULL,'normal'),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51','staff','local','0677532140',1,'1777466934993.png','normal'),(21,'Dau','','fourbrothers@gmail.com','$2b$10$.KVnJBfuPQi6iS/QN2wXzuceLtoem/g4hQVlKaogot24P.yVL45Si',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,'staff','local','0677532140',1,'1777466967528.png','supervisor'),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i',NULL,NULL,'2026-05-14 09:17:28',NULL,NULL,'admin','local',NULL,0,NULL,'normal'),(24,'John','Doe','mudydau@icloud.com','$2b$10$1X3Y7rSZRjYppzx3JcJz0O8Uy/GKJAY2Z5eZJSRzx1iTIxvr9n13q','Kijitonyama Street','Male','2026-05-14 09:20:50',NULL,NULL,'user','local',NULL,1,NULL,'normal'),(25,'John','Doe','molittle1011@gmail.com','$2b$10$xWt.8O5eXex3Y.3kBhC/4uHihQLyKUkdrWhrgrVBfqNWLt5hbTC9a','Kijitonyama Street','Male','2026-05-14 09:49:16',NULL,NULL,'user','local',NULL,1,NULL,'normal');
+INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal'),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51','staff','local','0677532140',1,1,'1777466934993.png',NULL,'normal'),(21,'Dau','','fourbrothers@gmail.com','$2b$10$.KVnJBfuPQi6iS/QN2wXzuceLtoem/g4hQVlKaogot24P.yVL45Si',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,'staff','local','0677532140',1,1,'1777466967528.png',NULL,'supervisor'),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i',NULL,NULL,'2026-05-14 09:17:28',NULL,NULL,'admin','local',NULL,0,1,NULL,NULL,'normal'),(24,'John','Doe','mudydau@icloud.com','$2b$10$1X3Y7rSZRjYppzx3JcJz0O8Uy/GKJAY2Z5eZJSRzx1iTIxvr9n13q','Kijitonyama Street','Male','2026-05-14 09:20:50',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal'),(26,'MO','11','molittle1011@gmail.com','$2b$10$N.b6GSlQuPRbXRtwGcxFWOF5xbjBemZllJ4hqgogxrtezMImAgzfi','Kijitonyama Street','Male','2026-05-14 13:13:47','302313','2026-05-14 16:47:44','user','local',NULL,1,1,NULL,NULL,'normal');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -467,4 +576,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-14 14:38:25
+-- Dump completed on 2026-05-25 12:33:33

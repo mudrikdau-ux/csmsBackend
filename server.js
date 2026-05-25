@@ -39,6 +39,7 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/feedbacks', require('./routes/feedbackRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/profile', require('./routes/profileRoutes'));
+app.use('/api/contact', require('./routes/contactRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {
