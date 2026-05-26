@@ -16,6 +16,35 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `admin_settings`
+--
+
+DROP TABLE IF EXISTS `admin_settings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `admin_settings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `setting_key` varchar(50) NOT NULL,
+  `setting_value` varchar(255) NOT NULL,
+  `description` text,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `setting_key` (`setting_key`),
+  KEY `idx_setting_key` (`setting_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `admin_settings`
+--
+
+LOCK TABLES `admin_settings` WRITE;
+/*!40000 ALTER TABLE `admin_settings` DISABLE KEYS */;
+INSERT INTO `admin_settings` VALUES (1,'email_notifications','1','Send email notifications to admin for new bookings','2026-05-25 12:31:00'),(2,'auto_assign_staff','1','Automatically assign staff to new bookings','2026-05-25 12:32:34');
+/*!40000 ALTER TABLE `admin_settings` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `analytics_cache`
 --
 
@@ -75,7 +104,7 @@ CREATE TABLE `bookings` (
   `email` varchar(150) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `payment_method` varchar(50) DEFAULT NULL,
-  `payment_status` enum('unpaid','partial','paid') DEFAULT 'unpaid',
+  `payment_status` enum('paid','unpaid') DEFAULT 'unpaid',
   `base_price` decimal(10,2) DEFAULT NULL,
   `extras` decimal(10,2) DEFAULT NULL,
   `discount` decimal(10,2) DEFAULT NULL,
@@ -87,7 +116,7 @@ CREATE TABLE `bookings` (
   PRIMARY KEY (`id`),
   KEY `idx_assigned_staff` (`assigned_staff_id`),
   CONSTRAINT `fk_booking_staff` FOREIGN KEY (`assigned_staff_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -96,8 +125,49 @@ CREATE TABLE `bookings` (
 
 LOCK TABLES `bookings` WRITE;
 /*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
-INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','partial',30000.00,15000.00,1500.00,43500.00,'confirmed',20,'MO 11','2026-04-29 09:49:07'),(2,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 09:52:53'),(3,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:39'),(4,NULL,3,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:59'),(5,22,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-05 08:42:39'),(6,25,4,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','paid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-14 09:56:14'),(7,25,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','paid',30000.00,15000.00,1500.00,43500.00,'in_progress',20,'MO 11','2026-05-14 10:40:30'),(8,26,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','MO','11','molittle1011@gmail.com','0677532140','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-14 13:47:57');
+INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'confirmed',20,'MO 11','2026-04-29 09:49:07'),(2,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 09:52:53'),(3,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:39'),(4,NULL,3,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:59'),(5,22,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-05 08:42:39'),(6,25,4,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','paid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-14 09:56:14'),(7,25,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','paid',30000.00,15000.00,1500.00,43500.00,'in_progress',20,'MO 11','2026-05-14 10:40:30'),(8,26,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','MO','11','molittle1011@gmail.com','0677532140','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-14 13:47:57'),(9,23,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-26','10:00:00',NULL,'Please be careful with glass items','MO','11','mudrikdau@gmail.com','0777555777','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'confirmed',20,'MO 11','2026-05-25 12:34:04');
 /*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `contact_inquiries`
+--
+
+DROP TABLE IF EXISTS `contact_inquiries`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `contact_inquiries` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `full_name` varchar(255) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `phone` varchar(20) NOT NULL,
+  `service_type` varchar(100) NOT NULL,
+  `subject` varchar(255) NOT NULL,
+  `message` text NOT NULL,
+  `subscribe` tinyint(1) DEFAULT '0',
+  `status` enum('unread','read','replied','archived') DEFAULT 'unread',
+  `replied_by` int DEFAULT NULL,
+  `reply_message` text,
+  `replied_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `replied_by` (`replied_by`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_email` (`email`),
+  CONSTRAINT `contact_inquiries_ibfk_1` FOREIGN KEY (`replied_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `contact_inquiries`
+--
+
+LOCK TABLES `contact_inquiries` WRITE;
+/*!40000 ALTER TABLE `contact_inquiries` DISABLE KEYS */;
+INSERT INTO `contact_inquiries` VALUES (1,'Fatima Hassan','fatima@example.com','0777555777','Deep House Cleaning','Question about pricing','Hello, I would like to know more about the pricing for deep house cleaning services. How much do you charge for a 3-bedroom house?',1,'unread',NULL,NULL,NULL,'2026-05-25 09:53:11','2026-05-25 09:53:11'),(2,'MO Hassan','molittle1011@gmail.com','0777555777','Deep House Cleaning','Question about pricing','Hello, I would like to know more about the pricing for deep house cleaning services. How much do you charge for a 3-bedroom house?',1,'replied',23,'Hello MO11,\n\nThank you for your inquiry. Our deep house cleaning for a 3-bedroom house costs TZS 50,000. This includes living room, kitchen, bathrooms, and bedrooms.\n\nPlease let us know if you\'d like to book a service.\n\nBest regards,\nCleanSpark Team','2026-05-25 10:28:02','2026-05-25 09:53:45','2026-05-25 10:28:02'),(3,'DAU Mudy','mudydau@icloud.com','0777555777','Deep House Cleaning','Question about pricing','Hello, I would like to know more about the pricing for deep house cleaning services. How much do you charge for a 3-bedroom house?',1,'replied',23,'Hello Mudy,\n\nThank you for your inquiry. Our deep house cleaning for a 3-bedroom house costs TZS 50,000. This includes living room, kitchen, bathrooms, and bedrooms.\n\nPlease let us know if you\'d like to book a service.\n\nBest regards,\nCleanSpark Team','2026-05-25 10:22:45','2026-05-25 10:12:32','2026-05-25 10:22:45');
+/*!40000 ALTER TABLE `contact_inquiries` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -258,6 +328,97 @@ LOCK TABLES `feedbacks` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `job_application_settings`
+--
+
+DROP TABLE IF EXISTS `job_application_settings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `job_application_settings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `is_open` tinyint(1) DEFAULT '0',
+  `application_deadline` date DEFAULT NULL,
+  `positions_available` text,
+  `min_age` int DEFAULT '18',
+  `max_age` int DEFAULT '60',
+  `updated_by` int DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `updated_by` (`updated_by`),
+  CONSTRAINT `job_application_settings_ibfk_1` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `job_application_settings`
+--
+
+LOCK TABLES `job_application_settings` WRITE;
+/*!40000 ALTER TABLE `job_application_settings` DISABLE KEYS */;
+INSERT INTO `job_application_settings` VALUES (1,0,'2026-12-31','Cleaner, Supervisor, Driver',18,60,23,'2026-05-25 12:02:15');
+/*!40000 ALTER TABLE `job_application_settings` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `job_applications`
+--
+
+DROP TABLE IF EXISTS `job_applications`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `job_applications` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `reference_number` varchar(20) NOT NULL,
+  `user_id` int DEFAULT NULL,
+  `full_name` varchar(255) NOT NULL,
+  `address` text NOT NULL,
+  `age` int NOT NULL,
+  `gender` enum('Male','Female','Prefer not to say') NOT NULL,
+  `phone` varchar(20) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `education_level` enum('elementary','highschool','diploma','degree','masters','phd') NOT NULL,
+  `experience_years` int DEFAULT '0',
+  `skills` text NOT NULL,
+  `position_applying` varchar(255) NOT NULL,
+  `availability` enum('immediately','2_weeks','1_month') NOT NULL,
+  `additional_notes` text,
+  `cv_file` varchar(255) NOT NULL,
+  `national_id_file` varchar(255) NOT NULL,
+  `introduction_letter_file` varchar(255) NOT NULL,
+  `passport_photo_file` varchar(255) NOT NULL,
+  `application_letter_file` varchar(255) DEFAULT NULL,
+  `certificate_file` varchar(255) DEFAULT NULL,
+  `other_docs_file` varchar(255) DEFAULT NULL,
+  `status` enum('pending','reviewed','shortlisted','rejected','hired') DEFAULT 'pending',
+  `reviewed_by` int DEFAULT NULL,
+  `review_notes` text,
+  `reviewed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `reference_number` (`reference_number`),
+  KEY `reviewed_by` (`reviewed_by`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_position` (`position_applying`),
+  KEY `idx_reference_number` (`reference_number`),
+  CONSTRAINT `job_applications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `job_applications_ibfk_2` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `job_applications`
+--
+
+LOCK TABLES `job_applications` WRITE;
+/*!40000 ALTER TABLE `job_applications` DISABLE KEYS */;
+INSERT INTO `job_applications` VALUES (1,'',23,'Fatima Hassan','45 Shangani Street, Stone Town',25,'Female','0677532140','fatima@example.com','diploma',3,'Cleaning, Organization, Team Management, Customer Service','Cleaner','immediately','nfgndffdfd','app_1779708852262_100595926.png','app_1779708852263_58220064.png','app_1779708852263_414545118.png','app_1779708852263_687997440.png',NULL,NULL,NULL,'pending',NULL,NULL,NULL,'2026-05-25 11:34:12','2026-05-25 11:34:12'),(2,'CS-JOB-2605-0001',23,'Fatima Hassan','45 Shangani Street, Stone Town',25,'Female','0677532140','fatima@example.com','diploma',3,'Cleaning, Organization, Team Management, Customer Service','Cleaner','immediately','nfgndffdfd','app_1779709555205_474925005.png','app_1779709555207_232591207.png','app_1779709555207_312701949.png','app_1779709555208_293395415.png',NULL,NULL,NULL,'rejected',23,'Excellent qualifications','2026-05-25 12:05:15','2026-05-25 11:45:55','2026-05-25 12:05:15');
+/*!40000 ALTER TABLE `job_applications` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `notification_logs`
 --
 
@@ -278,7 +439,7 @@ CREATE TABLE `notification_logs` (
   KEY `idx_type` (`notification_type`),
   KEY `idx_created_at` (`created_at`),
   CONSTRAINT `notification_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -287,7 +448,7 @@ CREATE TABLE `notification_logs` (
 
 LOCK TABLES `notification_logs` WRITE;
 /*!40000 ALTER TABLE `notification_logs` DISABLE KEYS */;
-INSERT INTO `notification_logs` VALUES (11,26,'booking_confirmation','Booking Confirmed - #8','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello MO 11,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #8\n                    Service: Deep House Cleaning\n                    Date: 2026-05-15\n                    Time: 10:00\n                    Address: Kijitonyama Street, Dar es Salaam\n                    Total: TZS 43,500\n                    \n      ','molittle1011@gmail.com','sent','2026-05-14 13:48:00');
+INSERT INTO `notification_logs` VALUES (11,26,'booking_confirmation','Booking Confirmed - #8','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello MO 11,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #8\n                    Service: Deep House Cleaning\n                    Date: 2026-05-15\n                    Time: 10:00\n                    Address: Kijitonyama Street, Dar es Salaam\n                    Total: TZS 43,500\n                    \n      ','molittle1011@gmail.com','sent','2026-05-14 13:48:00'),(12,23,'booking_confirmation','Booking Confirmed - #9','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello MO 11,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #9\n                    Service: Deep House Cleaning\n                    Date: 2026-05-26\n                    Time: 10:00\n                    Address: Kijitonyama Street, Dar es Salaam\n                    Total: TZS 43,500\n                    \n      ','mudrikdau@gmail.com','skipped','2026-05-25 12:34:04');
 /*!40000 ALTER TABLE `notification_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -544,6 +705,8 @@ CREATE TABLE `users` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `otp` varchar(10) DEFAULT NULL,
   `otp_expiry` datetime DEFAULT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_token_expiry` datetime DEFAULT NULL,
   `role` varchar(20) DEFAULT 'user',
   `provider` varchar(10) DEFAULT 'local',
   `phone` varchar(20) DEFAULT NULL,
@@ -563,7 +726,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal'),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51','staff','local','0677532140',1,1,'1777466934993.png',NULL,'normal'),(21,'Dau','','fourbrothers@gmail.com','$2b$10$.KVnJBfuPQi6iS/QN2wXzuceLtoem/g4hQVlKaogot24P.yVL45Si',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,'staff','local','0677532140',1,1,'1777466967528.png',NULL,'supervisor'),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i',NULL,NULL,'2026-05-14 09:17:28',NULL,NULL,'admin','local',NULL,0,1,NULL,NULL,'normal'),(24,'John','Doe','mudydau@icloud.com','$2b$10$1X3Y7rSZRjYppzx3JcJz0O8Uy/GKJAY2Z5eZJSRzx1iTIxvr9n13q','Kijitonyama Street','Male','2026-05-14 09:20:50',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal'),(26,'MO','11','molittle1011@gmail.com','$2b$10$N.b6GSlQuPRbXRtwGcxFWOF5xbjBemZllJ4hqgogxrtezMImAgzfi','Kijitonyama Street','Male','2026-05-14 13:13:47','302313','2026-05-14 16:47:44','user','local',NULL,1,1,NULL,NULL,'normal');
+INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal'),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51',NULL,NULL,'staff','local','0677532140',1,1,'1777466934993.png',NULL,'normal'),(21,'Dau','','fourbrothers@gmail.com','$2b$10$.KVnJBfuPQi6iS/QN2wXzuceLtoem/g4hQVlKaogot24P.yVL45Si',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,NULL,NULL,'staff','local','0677532140',1,1,'1777466967528.png',NULL,'supervisor'),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i',NULL,NULL,'2026-05-14 09:17:28',NULL,NULL,NULL,NULL,'admin','local',NULL,0,1,NULL,NULL,'normal'),(24,'John','Doe','mudydau@icloud.com','$2b$10$1X3Y7rSZRjYppzx3JcJz0O8Uy/GKJAY2Z5eZJSRzx1iTIxvr9n13q','Kijitonyama Street','Male','2026-05-14 09:20:50',NULL,NULL,NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal'),(26,'MO','11','molittle1011@gmail.com','$2b$10$TpNnZbnO61lJjpIBC1XVmu8DH5hLkjADHOtrAwvs0tK4Art8E3ghK','Kijitonyama Street','Male','2026-05-14 13:13:47','165982','2026-05-25 16:22:32',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -576,4 +739,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-25 12:33:33
+-- Dump completed on 2026-05-26 10:31:36

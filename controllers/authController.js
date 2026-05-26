@@ -1,12 +1,10 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 const client = require('../config/google');
 const { hashPassword } = require('../utils/hash');
 const { generateOTP } = require('../utils/otp');
-const { sendOTPEmail } = require('../config/mail');
+const { sendOTPEmail, sendPasswordResetOTPEmail } = require('../config/mail');
 
 const {
     createUser,
@@ -17,9 +15,9 @@ const {
     saveOTP,
     verifyOTP,
     clearOTP,
-    savePasswordResetToken,
-    findUserByResetToken,
-    clearResetToken,
+    savePasswordResetOTP,
+    verifyPasswordResetOTP,
+    clearPasswordResetOTP,
     blacklistToken,
     deleteUserAccount,
     getEmailNotificationPreference,
@@ -30,15 +28,6 @@ const {
     updateUserProfile,
     getUserById
 } = require('../models/userModel');
-
-// Email transporter for password reset
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
 
 // ==================== REGISTER USER ====================
 
@@ -229,7 +218,7 @@ const verifyUserOTP = async (req, res) => {
     }
 };
 
-// ==================== FORGOT PASSWORD ====================
+// ==================== FORGOT PASSWORD - SEND OTP ====================
 
 const forgotPassword = async (req, res) => {
     try {
@@ -245,7 +234,7 @@ const forgotPassword = async (req, res) => {
         if (users.length === 0) {
             return res.json({
                 success: true,
-                message: 'If an account with that email exists, a password reset link has been sent.'
+                message: 'If an account with that email exists, a password reset OTP has been sent.'
             });
         }
 
@@ -255,48 +244,24 @@ const forgotPassword = async (req, res) => {
         if (!user.password) {
             return res.json({
                 success: true,
-                message: 'If an account with that email exists, a password reset link has been sent.'
+                message: 'If an account with that email exists, a password reset OTP has been sent.'
             });
         }
 
-        // Generate reset token
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+        // Generate OTP for password reset
+        const otp = generateOTP();
+        const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
-        // Save token
-        await savePasswordResetToken(email, resetToken, resetTokenExpiry);
+        // Save OTP for password reset
+        await savePasswordResetOTP(email, otp, expiry);
 
-        // Send reset email
-        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-        
-        await transporter.sendMail({
-            from: `"CleanSpark Security" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: 'Reset Your Password - CleanSpark',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #fff; border-radius: 10px; overflow: hidden;">
-                    <div style="background: #1a5276; padding: 30px; text-align: center;">
-                        <h1 style="color: #fff; margin: 0;">🔐 Reset Your Password</h1>
-                    </div>
-                    <div style="padding: 30px;">
-                        <h2 style="color: #2c3e50;">Hello ${user.first_name},</h2>
-                        <p style="color: #34495e;">We received a request to reset your password. Click the button below to reset it:</p>
-                        <div style="text-align: center; margin: 30px 0;">
-                            <a href="${resetLink}" style="background: #3498db; color: #fff; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-size: 16px;">Reset Password</a>
-                        </div>
-                        <p style="color: #7f8c8d; font-size: 12px;">This link expires in 30 minutes.</p>
-                        <p style="color: #e74c3c; font-size: 12px;">If you didn't request this, please ignore this email.</p>
-                    </div>
-                    <div style="background: #1a5276; padding: 15px; text-align: center;">
-                        <p style="color: #fff; margin: 0; font-size: 12px;">© ${new Date().getFullYear()} CleanSpark</p>
-                    </div>
-                </div>
-            `
-        });
+        // Send reset OTP email
+        await sendPasswordResetOTPEmail(email, user.first_name, otp, 10);
 
         res.json({
             success: true,
-            message: 'If an account with that email exists, a password reset link has been sent.'
+            message: 'Password reset OTP sent to your email. Valid for 10 minutes.',
+            email: email
         });
 
     } catch (error) {
@@ -309,14 +274,58 @@ const forgotPassword = async (req, res) => {
     }
 };
 
-// ==================== RESET PASSWORD ====================
+// ==================== VERIFY RESET OTP ====================
+
+const verifyResetOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({ message: 'Email and OTP are required' });
+        }
+
+        // Verify the reset OTP
+        const result = await verifyPasswordResetOTP(email, otp);
+
+        if (result.length === 0) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Invalid or expired OTP. Please request a new one.' 
+            });
+        }
+
+        const user = result[0];
+
+        // Generate a temporary token for password reset (valid for 15 minutes)
+        const resetToken = jwt.sign(
+            { id: user.id, email: user.email, purpose: 'password_reset' },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        res.json({
+            success: true,
+            message: 'OTP verified successfully. You can now reset your password.',
+            resetToken: resetToken
+        });
+
+    } catch (error) {
+        console.error('Verify reset OTP error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Verification failed. Please try again.' 
+        });
+    }
+};
+
+// ==================== RESET PASSWORD (with OTP) ====================
 
 const resetPassword = async (req, res) => {
     try {
-        const { token, new_password, confirm_password } = req.body;
+        const { resetToken, new_password, confirm_password } = req.body;
 
-        if (!token || !new_password || !confirm_password) {
-            return res.status(400).json({ message: 'Token and new password are required' });
+        if (!resetToken || !new_password || !confirm_password) {
+            return res.status(400).json({ message: 'Reset token and new password are required' });
         }
 
         if (new_password !== confirm_password) {
@@ -327,23 +336,31 @@ const resetPassword = async (req, res) => {
             return res.status(400).json({ message: 'Password must be at least 6 characters' });
         }
 
-        // Find user by reset token
-        const users = await findUserByResetToken(token);
-
-        if (users.length === 0) {
-            return res.status(400).json({ 
-                message: 'Invalid or expired reset token. Please request a new one.' 
-            });
+        // Verify the reset token
+        let decoded;
+        try {
+            decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+            if (decoded.purpose !== 'password_reset') {
+                return res.status(400).json({ message: 'Invalid reset token' });
+            }
+        } catch (err) {
+            return res.status(400).json({ message: 'Invalid or expired reset token. Please request a new OTP.' });
         }
 
-        const user = users[0];
+        const userId = decoded.id;
+
+        // Get user
+        const users = await getUserById(userId);
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
 
         // Hash new password
         const hashedPassword = await bcrypt.hash(new_password, 10);
-        await updateUserPassword(user.id, hashedPassword);
+        await updateUserPassword(userId, hashedPassword);
 
-        // Clear reset token
-        await clearResetToken(user.id);
+        // Clear any remaining reset OTPs for this user
+        await clearPasswordResetOTP(decoded.email);
 
         res.json({
             success: true,
@@ -356,6 +373,56 @@ const resetPassword = async (req, res) => {
             success: false, 
             message: 'Failed to reset password', 
             error: error.message 
+        });
+    }
+};
+
+// ==================== RESEND RESET OTP ====================
+
+const resendResetOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        const users = await findUserByEmail(email);
+        
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'No account found with this email' });
+        }
+
+        const user = users[0];
+
+        // Don't send reset for Google-only accounts
+        if (!user.password) {
+            return res.status(400).json({ 
+                message: 'This account uses Google login. Password cannot be reset here.' 
+            });
+        }
+
+        // Generate new OTP
+        const otp = generateOTP();
+        const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+        // Save new OTP
+        await savePasswordResetOTP(email, otp, expiry);
+
+        // Send new OTP email
+        await sendPasswordResetOTPEmail(email, user.first_name, otp, 10);
+
+        res.json({
+            success: true,
+            message: 'New password reset OTP sent to your email. Valid for 10 minutes.',
+            email: email
+        });
+
+    } catch (error) {
+        console.error('Resend reset OTP error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to resend OTP. Please try again.' 
         });
     }
 };
@@ -923,7 +990,9 @@ module.exports = {
     loginUser,
     verifyUserOTP,
     forgotPassword,
+    verifyResetOTP,
     resetPassword,
+    resendResetOTP,
     adminLogin,
     verifyAdminOTP,
     resendAdminOTP,

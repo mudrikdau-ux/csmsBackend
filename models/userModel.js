@@ -106,7 +106,7 @@ const findStaffByEmail = async (email) => {
     return db.query(`SELECT * FROM users WHERE email = ? AND role = 'staff'`, [email]);
 };
 
-// ==================== OTP OPERATIONS ====================
+// ==================== OTP OPERATIONS (Login OTP) ====================
 
 const saveOTP = async (email, otp, expiry) => {
     return db.query(
@@ -129,26 +129,26 @@ const clearOTP = async (email) => {
     );
 };
 
-// ==================== PASSWORD RESET ====================
+// ==================== PASSWORD RESET OTP OPERATIONS ====================
 
-const savePasswordResetToken = async (email, token, expiry) => {
+const savePasswordResetOTP = async (email, otp, expiry) => {
     return db.query(
-        `UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?`,
-        [token, expiry, email]
+        `UPDATE users SET reset_otp = ?, reset_otp_expiry = ? WHERE email = ?`,
+        [otp, expiry, email]
     );
 };
 
-const findUserByResetToken = async (token) => {
+const verifyPasswordResetOTP = async (email, otp) => {
     return db.query(
-        `SELECT * FROM users WHERE reset_token = ? AND reset_token_expiry > NOW()`,
-        [token]
+        `SELECT * FROM users WHERE email = ? AND reset_otp = ? AND reset_otp_expiry > NOW()`,
+        [email, otp]
     );
 };
 
-const clearResetToken = async (userId) => {
+const clearPasswordResetOTP = async (email) => {
     return db.query(
-        `UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = ?`,
-        [userId]
+        `UPDATE users SET reset_otp = NULL, reset_otp_expiry = NULL WHERE email = ?`,
+        [email]
     );
 };
 
@@ -185,7 +185,7 @@ const deleteUserAccount = async (userId) => {
     }
 
     await db.query(`DELETE FROM feedbacks WHERE user_id = ?`, [userId]);
-    await db.query(`UPDATE users SET otp = NULL, otp_expiry = NULL, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?`, [userId]);
+    await db.query(`UPDATE users SET otp = NULL, otp_expiry = NULL, reset_otp = NULL, reset_otp_expiry = NULL WHERE id = ?`, [userId]);
     await db.query(`DELETE FROM token_blacklist WHERE user_id = ?`, [userId]);
     await db.query(`DELETE FROM users WHERE id = ?`, [userId]);
     
@@ -288,9 +288,9 @@ module.exports = {
     saveOTP,
     verifyOTP,
     clearOTP,
-    savePasswordResetToken,
-    findUserByResetToken,
-    clearResetToken,
+    savePasswordResetOTP,
+    verifyPasswordResetOTP,
+    clearPasswordResetOTP,
     blacklistToken,
     isTokenBlacklisted,
     deleteUserAccount,

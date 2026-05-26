@@ -7,7 +7,9 @@ const {
     loginUser,
     verifyUserOTP,
     forgotPassword,
+    verifyResetOTP,
     resetPassword,
+    resendResetOTP,
     adminLogin,
     verifyAdminOTP,
     resendAdminOTP,
@@ -30,9 +32,11 @@ router.post('/register', validateRegister, registerUser);
 router.post('/login', validateLogin, loginUser);
 router.post('/verify-otp', verifyUserOTP);
 
-// ==================== PASSWORD RESET ====================
+// ==================== PASSWORD RESET (OTP Based) ====================
 router.post('/forgot-password', forgotPassword);
+router.post('/verify-reset-otp', verifyResetOTP);
 router.post('/reset-password', resetPassword);
+router.post('/resend-reset-otp', resendResetOTP);
 
 // ==================== GOOGLE AUTH ====================
 router.post('/google-login', googleLogin);
@@ -61,7 +65,6 @@ router.post('/logout', verifyToken, logoutUser);
 
 // Delete account
 router.delete('/delete-account', verifyToken, deleteAccount);
-
 
 // Get notification preferences
 router.get('/notifications/preferences', verifyToken, getNotificationPreferences);
