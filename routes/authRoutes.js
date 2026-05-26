@@ -16,6 +16,7 @@ const {
     staffLogin,
     logoutUser,
     staffLogout,
+    adminLogout, 
     getProfile,
     updateProfile,
     changePassword,
@@ -26,7 +27,7 @@ const {
 } = require('../controllers/authController');
 
 const { validateRegister, validateLogin } = require('../middleware/validate');
-const { verifyToken, verifyStaff } = require('../middleware/auth'); // ← ADD verifyStaff HERE
+const { verifyToken, verifyStaff, verifyAdmin } = require('../middleware/auth'); // ← ADD verifyAdmin HERE
 
 // ==================== USER AUTH ====================
 router.post('/register', validateRegister, registerUser);
@@ -46,9 +47,11 @@ router.post('/google-login', googleLogin);
 router.post('/admin/login', validateLogin, adminLogin);
 router.post('/admin/verify-otp', verifyAdminOTP);
 router.post('/admin/resend-otp', resendAdminOTP);
+router.post('/admin/logout', verifyAdmin, adminLogout); 
 
 // ==================== STAFF AUTH ====================
 router.post('/staff/login', validateLogin, staffLogin);
+router.post('/staff/logout', verifyStaff, staffLogout);
 
 // ==================== USER PROFILE (Authenticated) ====================
 
@@ -63,9 +66,6 @@ router.put('/change-password', verifyToken, changePassword);
 
 // Logout
 router.post('/logout', verifyToken, logoutUser);
-
-// Staff logout
-router.post('/staff/logout', verifyStaff, staffLogout); // ← Now verifyStaff is defined
 
 // Delete account
 router.delete('/delete-account', verifyToken, deleteAccount);

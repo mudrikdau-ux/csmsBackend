@@ -658,6 +658,32 @@ const staffLogout = async (req, res) => {
     }
 };
 
+// ==================== ADMIN LOGOUT ====================
+
+const adminLogout = async (req, res) => {
+    try {
+        const token = req.token;
+        const userId = req.user.id;
+
+        const decoded = jwt.decode(token);
+        const expiresAt = new Date(decoded.exp * 1000);
+
+        await blacklistToken(token, userId, expiresAt);
+
+        res.json({
+            success: true,
+            message: 'Admin logged out successfully'
+        });
+    } catch (error) {
+        console.error('Admin logout error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to logout',
+            error: error.message
+        });
+    }
+};
+
 // ==================== GET PROFILE ====================
 
 const getProfile = async (req, res) => {
@@ -1025,6 +1051,7 @@ module.exports = {
     staffLogin,
     logoutUser,
     staffLogout,
+    adminLogout,
     getProfile,
     updateProfile,
     changePassword,
