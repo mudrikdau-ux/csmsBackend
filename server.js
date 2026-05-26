@@ -7,6 +7,10 @@ const morgan = require('morgan');
 dotenv.config();
 
 const app = express();
+const staffRoutes = require('./routes/staffRoutes');
+const supervisorRoutes = require('./routes/supervisorRoutes');
+const adminChatRoutes = require('./routes/adminChatRoutes');
+const ratingRoutes = require('./routes/ratingRoutes');
 
 // Middleware
 app.use(cors());
@@ -42,6 +46,10 @@ app.use('/api/profile', require('./routes/profileRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/admin-settings', require('./routes/adminSettingsRoutes'));
+app.use('/api/staff', staffRoutes);
+app.use('/api/supervisor', supervisorRoutes);
+app.use('/api/admin/chats', adminChatRoutes);
+app.use('/api/ratings', ratingRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

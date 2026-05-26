@@ -15,6 +15,7 @@ const {
     resendAdminOTP,
     staffLogin,
     logoutUser,
+    staffLogout,
     getProfile,
     updateProfile,
     changePassword,
@@ -25,7 +26,7 @@ const {
 } = require('../controllers/authController');
 
 const { validateRegister, validateLogin } = require('../middleware/validate');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, verifyStaff } = require('../middleware/auth'); // ← ADD verifyStaff HERE
 
 // ==================== USER AUTH ====================
 router.post('/register', validateRegister, registerUser);
@@ -62,6 +63,9 @@ router.put('/change-password', verifyToken, changePassword);
 
 // Logout
 router.post('/logout', verifyToken, logoutUser);
+
+// Staff logout
+router.post('/staff/logout', verifyStaff, staffLogout); // ← Now verifyStaff is defined
 
 // Delete account
 router.delete('/delete-account', verifyToken, deleteAccount);

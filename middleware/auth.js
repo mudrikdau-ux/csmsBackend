@@ -51,4 +51,13 @@ const verifyStaff = async (req, res, next) => {
     });
 };
 
-module.exports = { verifyToken, verifyAdmin, verifyStaff };
+const verifySupervisor = async (req, res, next) => {
+    await verifyToken(req, res, () => {
+        if (req.user.role !== 'staff' || req.user.staff_type !== 'supervisor') {
+            return res.status(403).json({ message: 'Access denied. Supervisor only.' });
+        }
+        next();
+    });
+};
+
+module.exports = { verifyToken, verifyAdmin, verifyStaff, verifySupervisor };

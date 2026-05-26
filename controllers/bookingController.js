@@ -67,7 +67,7 @@ const getStatusLabel = (status) => {
         'pending': 'Pending',
         'confirmed': 'Upcoming',
         'in_progress': 'In Progress',
-        'completed': 'Delivered',
+        'completed': 'Completed',
         'cancelled': 'Cancelled'
     };
     return labels[status] || status;

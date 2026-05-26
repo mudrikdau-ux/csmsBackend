@@ -631,6 +631,32 @@ const logoutUser = async (req, res) => {
         });
     }
 };
+// ==================== STAFF LOGOUT ====================
+
+const staffLogout = async (req, res) => {
+    try {
+        const token = req.token;
+        const userId = req.user.id;
+
+        const decoded = jwt.decode(token);
+        const expiresAt = new Date(decoded.exp * 1000);
+
+        await blacklistToken(token, userId, expiresAt);
+
+        res.json({
+            success: true,
+            message: 'Logged out successfully'
+        });
+
+    } catch (error) {
+        console.error('Staff logout error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to logout',
+            error: error.message
+        });
+    }
+};
 
 // ==================== GET PROFILE ====================
 
@@ -998,6 +1024,7 @@ module.exports = {
     resendAdminOTP,
     staffLogin,
     logoutUser,
+    staffLogout,
     getProfile,
     updateProfile,
     changePassword,
