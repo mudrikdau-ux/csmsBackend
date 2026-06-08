@@ -90,25 +90,50 @@ CREATE TABLE `bookings` (
   `frequency` enum('one-time','weekly') DEFAULT NULL,
   `materials` tinyint(1) DEFAULT NULL,
   `property_type` varchar(100) DEFAULT NULL,
+  `property_type_detail` varchar(50) DEFAULT NULL,
+  `bedrooms` int DEFAULT NULL,
+  `bathrooms` int DEFAULT NULL,
+  `dirt_level` enum('light','moderate','heavy') DEFAULT NULL,
+  `cleaning_frequency` enum('one_time','daily','weekly','monthly') DEFAULT NULL,
   `address` text,
+  `area_district` varchar(100) DEFAULT NULL,
   `city` varchar(100) DEFAULT NULL,
+  `region` varchar(100) DEFAULT NULL,
   `landmark` varchar(255) DEFAULT NULL,
+  `building_name` varchar(255) DEFAULT NULL,
+  `floor_number` varchar(50) DEFAULT NULL,
   `latitude` decimal(10,8) DEFAULT NULL,
   `longitude` decimal(11,8) DEFAULT NULL,
+  `pin_latitude` decimal(10,8) DEFAULT NULL,
+  `pin_longitude` decimal(11,8) DEFAULT NULL,
   `service_date` date DEFAULT NULL,
   `service_time` time DEFAULT NULL,
   `completed_date` datetime DEFAULT NULL,
   `instructions` text,
+  `special_instructions_cleaners` text,
   `first_name` varchar(100) DEFAULT NULL,
   `last_name` varchar(100) DEFAULT NULL,
   `email` varchar(150) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
+  `alternative_phone` varchar(20) DEFAULT NULL,
+  `preferred_communication` varchar(50) DEFAULT NULL,
   `payment_method` varchar(50) DEFAULT NULL,
   `payment_status` enum('paid','unpaid') DEFAULT 'unpaid',
+  `estimation_status` enum('pending','estimated','invoiced') DEFAULT 'pending',
+  `invoice_generated_at` datetime DEFAULT NULL,
+  `invoice_pdf_path` varchar(500) DEFAULT NULL,
   `base_price` decimal(10,2) DEFAULT NULL,
   `extras` decimal(10,2) DEFAULT NULL,
   `discount` decimal(10,2) DEFAULT NULL,
   `total_price` decimal(10,2) DEFAULT NULL,
+  `estimated_service_cost` decimal(12,2) DEFAULT NULL,
+  `labor_cost` decimal(12,2) DEFAULT NULL,
+  `transport_cost` decimal(12,2) DEFAULT NULL,
+  `equipment_cost_admin` decimal(12,2) DEFAULT NULL,
+  `tax_rate_admin` decimal(5,2) DEFAULT NULL,
+  `tax_amount_admin` decimal(12,2) DEFAULT NULL,
+  `discount_admin` decimal(12,2) DEFAULT NULL,
+  `final_total` decimal(12,2) DEFAULT NULL,
   `status` varchar(50) DEFAULT 'pending',
   `assigned_staff_id` int DEFAULT NULL,
   `assigned_staff_name` varchar(200) DEFAULT NULL,
@@ -116,7 +141,7 @@ CREATE TABLE `bookings` (
   PRIMARY KEY (`id`),
   KEY `idx_assigned_staff` (`assigned_staff_id`),
   CONSTRAINT `fk_booking_staff` FOREIGN KEY (`assigned_staff_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -125,7 +150,7 @@ CREATE TABLE `bookings` (
 
 LOCK TABLES `bookings` WRITE;
 /*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
-INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'confirmed',20,'MO 11','2026-04-29 09:49:07'),(2,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near school',-6.79240000,39.20830000,'2026-05-01','10:00:00',NULL,'Be careful with glass','Mudrik','Dau','test@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 09:52:53'),(3,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:39'),(4,NULL,3,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','john@example.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-04-29 12:03:59'),(5,22,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-05 08:42:39'),(6,25,4,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','paid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-14 09:56:14'),(7,25,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','John','Doe','molittle1011@gmail.com','0777000000','cash','paid',30000.00,15000.00,1500.00,43500.00,'in_progress',20,'MO 11','2026-05-14 10:40:30'),(8,26,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-15','10:00:00',NULL,'Please be careful with glass items','MO','11','molittle1011@gmail.com','0677532140','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'pending',NULL,NULL,'2026-05-14 13:47:57'),(9,23,2,2,3,'weekly',1,'apartment','Kijitonyama Street','Dar es Salaam','Near School',-6.79240000,39.20830000,'2026-05-26','10:00:00',NULL,'Please be careful with glass items','MO','11','mudrikdau@gmail.com','0777555777','cash','unpaid',30000.00,15000.00,1500.00,43500.00,'confirmed',20,'MO 11','2026-05-25 12:34:04');
+INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near school',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-05-01','10:00:00',NULL,'Be careful with glass',NULL,'Mudrik','Dau','test@gmail.com','0777000000',NULL,NULL,'cash','paid','pending',NULL,NULL,30000.00,15000.00,1500.00,43500.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'confirmed',20,'MO 11','2026-04-29 09:49:07'),(2,NULL,1,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near school',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-05-01','10:00:00',NULL,'Be careful with glass',NULL,'Mudrik','Dau','test@gmail.com','0777000000',NULL,NULL,'cash','unpaid','pending',NULL,NULL,30000.00,15000.00,1500.00,43500.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'pending',NULL,NULL,'2026-04-29 09:52:53'),(3,NULL,1,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near School',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-05-15','10:00:00',NULL,'Please be careful with glass items',NULL,'John','Doe','john@example.com','0777000000',NULL,NULL,'cash','unpaid','pending',NULL,NULL,30000.00,15000.00,1500.00,43500.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'pending',NULL,NULL,'2026-04-29 12:03:39'),(4,NULL,3,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near School',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-05-15','10:00:00',NULL,'Please be careful with glass items',NULL,'John','Doe','john@example.com','0777000000',NULL,NULL,'cash','unpaid','pending',NULL,NULL,30000.00,15000.00,1500.00,43500.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'pending',NULL,NULL,'2026-04-29 12:03:59'),(5,22,2,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near School',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-05-15','10:00:00',NULL,'Please be careful with glass items',NULL,'John','Doe','molittle1011@gmail.com','0777000000',NULL,NULL,'cash','unpaid','pending',NULL,NULL,30000.00,15000.00,1500.00,43500.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'pending',NULL,NULL,'2026-05-05 08:42:39'),(6,25,4,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near School',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-05-15','10:00:00',NULL,'Please be careful with glass items',NULL,'John','Doe','molittle1011@gmail.com','0777000000',NULL,NULL,'cash','paid','pending',NULL,NULL,30000.00,15000.00,1500.00,43500.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'pending',NULL,NULL,'2026-05-14 09:56:14'),(7,25,2,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near School',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-05-15','10:00:00',NULL,'Please be careful with glass items',NULL,'John','Doe','molittle1011@gmail.com','0777000000',NULL,NULL,'cash','paid','pending',NULL,NULL,30000.00,15000.00,1500.00,43500.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'in_progress',20,'MO 11','2026-05-14 10:40:30'),(8,26,2,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near School',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-05-15','10:00:00',NULL,'Please be careful with glass items',NULL,'MO','11','molittle1011@gmail.com','0677532140',NULL,NULL,'cash','unpaid','pending',NULL,NULL,30000.00,15000.00,1500.00,43500.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'pending',NULL,NULL,'2026-05-14 13:47:57'),(9,23,2,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near School',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-05-26','10:00:00',NULL,'Please be careful with glass items',NULL,'MO','11','mudrikdau@gmail.com','0777555777',NULL,NULL,'cash','unpaid','invoiced','2026-06-08 15:20:17','C:\\Users\\mudri\\OneDrive\\Desktop\\cleaning serv\\backend\\invoices\\customer\\invoice_INV-CUST-202606-000001.pdf',30000.00,15000.00,1500.00,43500.00,55000.00,25000.00,8000.00,5000.00,18.00,16740.00,5000.00,104740.00,'confirmed',20,'MO 11','2026-05-25 12:34:04'),(10,24,2,2,3,'weekly',1,'apartment',NULL,NULL,NULL,NULL,NULL,'Kijitonyama Street',NULL,'Dar es Salaam',NULL,'Near School',NULL,NULL,-6.79240000,39.20830000,NULL,NULL,'2026-06-26','10:00:00',NULL,'Please be careful with glass items',NULL,'Mudrik','Dau','mudydau@icloud.com','0777555777',NULL,NULL,'cash','unpaid','pending',NULL,NULL,25000.00,0.00,0.00,25000.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'confirmed',20,'MO 11','2026-06-08 12:04:53'),(11,24,2,2,3,'one-time',1,'House','Villa',3,2,'moderate','weekly','123 Ocean Road','Urban West','Zanzibar City','Mjini Magharibi','Near Forodhani Gardens','Ocean Pearl','2nd Floor',-6.16230000,39.18920000,-6.16250000,39.18950000,'2026-06-20','10:00:00',NULL,'Please bring eco-friendly cleaning products','Be careful with the antique furniture','John','Doe','mudydau@icloud.com','+255777123456','+255777654321','whatsapp','cash','unpaid','pending',NULL,NULL,25000.00,24750.00,2500.00,47250.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'confirmed',20,'MO 11','2026-06-08 12:07:10');
 /*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -140,7 +165,7 @@ CREATE TABLE `cash_payments` (
   `id` int NOT NULL AUTO_INCREMENT,
   `booking_id` int NOT NULL,
   `staff_id` int NOT NULL,
-  `user_id` int NOT NULL,
+  `user_id` int DEFAULT NULL,
   `amount_received` decimal(12,2) NOT NULL,
   `change_amount` decimal(12,2) DEFAULT '0.00',
   `payment_note` text,
@@ -154,8 +179,8 @@ CREATE TABLE `cash_payments` (
   KEY `idx_created_at` (`created_at`),
   CONSTRAINT `cash_payments_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
   CONSTRAINT `cash_payments_ibfk_2` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `cash_payments_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `cash_payments_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -164,6 +189,7 @@ CREATE TABLE `cash_payments` (
 
 LOCK TABLES `cash_payments` WRITE;
 /*!40000 ALTER TABLE `cash_payments` DISABLE KEYS */;
+INSERT INTO `cash_payments` VALUES (2,1,20,NULL,43500.00,0.00,'Paid in cash by customer','RCP-1780912113334-160','2026-06-08 09:48:33');
 /*!40000 ALTER TABLE `cash_payments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -301,6 +327,54 @@ INSERT INTO `contractors` VALUES (1,'ZSSF - Zanzibar Social Security Fund','gove
 UNLOCK TABLES;
 
 --
+-- Table structure for table `customer_invoices`
+--
+
+DROP TABLE IF EXISTS `customer_invoices`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `customer_invoices` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `booking_id` int NOT NULL,
+  `invoice_number` varchar(50) NOT NULL,
+  `invoice_date` date NOT NULL,
+  `due_date` date NOT NULL,
+  `service_cost` decimal(12,2) NOT NULL,
+  `labor_cost` decimal(12,2) DEFAULT '0.00',
+  `transport_cost` decimal(12,2) DEFAULT '0.00',
+  `equipment_cost` decimal(12,2) DEFAULT '0.00',
+  `subtotal` decimal(12,2) NOT NULL,
+  `tax_rate` decimal(5,2) DEFAULT '0.00',
+  `tax_amount` decimal(12,2) DEFAULT '0.00',
+  `discount_amount` decimal(12,2) DEFAULT '0.00',
+  `total_amount` decimal(12,2) NOT NULL,
+  `notes` text,
+  `status` enum('draft','sent','paid','overdue') DEFAULT 'draft',
+  `pdf_path` varchar(500) DEFAULT NULL,
+  `sent_at` datetime DEFAULT NULL,
+  `created_by` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `invoice_number` (`invoice_number`),
+  KEY `idx_booking_id` (`booking_id`),
+  KEY `idx_status` (`status`),
+  KEY `fk_customer_invoice_created_by` (`created_by`),
+  CONSTRAINT `fk_customer_invoice_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_customer_invoice_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `customer_invoices`
+--
+
+LOCK TABLES `customer_invoices` WRITE;
+/*!40000 ALTER TABLE `customer_invoices` DISABLE KEYS */;
+INSERT INTO `customer_invoices` VALUES (1,9,'INV-CUST-202606-000001','2026-06-08','2026-06-05',55000.00,25000.00,8000.00,5000.00,93000.00,18.00,16740.00,5000.00,104740.00,'Payment via bank transfer to CleanSpark Co. Ltd, Account: 0123456789, CRDB Bank. Reference: INV-CON-202605-0001','draft','C:\\Users\\mudri\\OneDrive\\Desktop\\cleaning serv\\backend\\invoices\\customer\\invoice_INV-CUST-202606-000001.pdf',NULL,23,'2026-06-08 12:20:17');
+/*!40000 ALTER TABLE `customer_invoices` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `deleted_users`
 --
 
@@ -367,6 +441,41 @@ CREATE TABLE `feedbacks` (
 LOCK TABLES `feedbacks` WRITE;
 /*!40000 ALTER TABLE `feedbacks` DISABLE KEYS */;
 /*!40000 ALTER TABLE `feedbacks` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `general_supervisor_reports`
+--
+
+DROP TABLE IF EXISTS `general_supervisor_reports`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `general_supervisor_reports` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `supervisor_id` int NOT NULL,
+  `week_ending_date` date NOT NULL,
+  `work_progress` text NOT NULL,
+  `worker_performance` text NOT NULL,
+  `equipment_status` text NOT NULL,
+  `additional_requests` text,
+  `report_pdf_path` varchar(500) DEFAULT NULL,
+  `submitted_to_admin` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_supervisor_id` (`supervisor_id`),
+  KEY `idx_week_ending` (`week_ending_date`),
+  CONSTRAINT `fk_gsr_supervisor` FOREIGN KEY (`supervisor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `general_supervisor_reports`
+--
+
+LOCK TABLES `general_supervisor_reports` WRITE;
+/*!40000 ALTER TABLE `general_supervisor_reports` DISABLE KEYS */;
+INSERT INTO `general_supervisor_reports` VALUES (1,29,'2026-05-30','Completed deep cleaning of all 5 floors. Window washing done on floors 1-3. Restroom sanitation completed daily.','All staff performed excellently. Mohammed Ali completed 12 jobs this week with 100% satisfaction rate. Sarah Johnson showed great leadership.','Two vacuum cleaners need maintenance. Requesting 3 new mops and cleaning solution refill.','Need 2 additional staff for next week due to increased workload. Requesting supervisor training session.','C:\\Users\\mudri\\OneDrive\\Desktop\\cleaning serv\\backend\\reports\\general_supervisor\\weekly_report_1_1780912235814.pdf',1,'2026-06-08 09:50:09');
+/*!40000 ALTER TABLE `general_supervisor_reports` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -481,7 +590,7 @@ CREATE TABLE `notification_logs` (
   KEY `idx_type` (`notification_type`),
   KEY `idx_created_at` (`created_at`),
   CONSTRAINT `notification_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -490,7 +599,7 @@ CREATE TABLE `notification_logs` (
 
 LOCK TABLES `notification_logs` WRITE;
 /*!40000 ALTER TABLE `notification_logs` DISABLE KEYS */;
-INSERT INTO `notification_logs` VALUES (11,26,'booking_confirmation','Booking Confirmed - #8','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello MO 11,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #8\n                    Service: Deep House Cleaning\n                    Date: 2026-05-15\n                    Time: 10:00\n                    Address: Kijitonyama Street, Dar es Salaam\n                    Total: TZS 43,500\n                    \n      ','molittle1011@gmail.com','sent','2026-05-14 13:48:00'),(12,23,'booking_confirmation','Booking Confirmed - #9','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello MO 11,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #9\n                    Service: Deep House Cleaning\n                    Date: 2026-05-26\n                    Time: 10:00\n                    Address: Kijitonyama Street, Dar es Salaam\n                    Total: TZS 43,500\n                    \n      ','mudrikdau@gmail.com','skipped','2026-05-25 12:34:04');
+INSERT INTO `notification_logs` VALUES (12,23,'booking_confirmation','Booking Confirmed - #9','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello MO 11,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #9\n                    Service: Deep House Cleaning\n                    Date: 2026-05-26\n                    Time: 10:00\n                    Address: Kijitonyama Street, Dar es Salaam\n                    Total: TZS 43,500\n                    \n      ','mudrikdau@gmail.com','skipped','2026-05-25 12:34:04'),(13,24,'booking_confirmation','Booking Confirmed - #10','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello Mudrik Dau,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #10\n                    Service: Deep House Cleaning\n                    Date: 2026-06-26\n                    Time: 10:00\n                    Address: Kijitonyama Street, Dar es Salaam\n                    Total: TZS 25,000\n                    \n','mudydau@icloud.com','sent','2026-06-08 12:04:55'),(14,24,'booking_confirmation','Booking Confirmed - #11','\n        \n            \n                ✅ Booking Confirmed\n            \n            \n                Hello John Doe,\n                Your booking has been confirmed. Here are the details:\n                \n                \n                    Booking ID: #11\n                    Service: Deep House Cleaning\n                    Date: 2026-06-20\n                    Time: 10:00:00\n                    Address: 123 Ocean Road, Zanzibar City\n                    Total: TZS 47,250\n                    \n   ','mudydau@icloud.com','sent','2026-06-08 12:07:13'),(15,23,'invoice','Invoice #INV-CUST-202606-000001 - CleanSpark','\n        \n            \n                ? Invoice Ready\n            \n            \n                Hello,\n                Your invoice is ready for review.\n                \n                    Invoice #: INV-CUST-202606-000001\n                    Total Amount: TZS 104,740\n                    Due Date: 2026-06-05\n                \n                Please login to your account to view and download the invoice.\n            \n        \n    ','mudrikdau@gmail.com','skipped','2026-06-08 12:20:17');
 /*!40000 ALTER TABLE `notification_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -584,7 +693,7 @@ DROP TABLE IF EXISTS `reports`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `reports` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `report_type` enum('comprehensive','booking','revenue','staff_performance','contractors') NOT NULL,
+  `report_type` enum('comprehensive','booking','revenue','contractors','staff_report') NOT NULL,
   `report_format` enum('detailed','summary') NOT NULL,
   `date_from` date NOT NULL,
   `date_to` date NOT NULL,
@@ -598,7 +707,7 @@ CREATE TABLE `reports` (
   KEY `idx_date_range` (`date_from`,`date_to`),
   KEY `idx_created_at` (`created_at`),
   CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`generated_by`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -607,6 +716,7 @@ CREATE TABLE `reports` (
 
 LOCK TABLES `reports` WRITE;
 /*!40000 ALTER TABLE `reports` DISABLE KEYS */;
+INSERT INTO `reports` VALUES (1,'comprehensive','detailed','2026-01-01','2026-06-30',23,NULL,'{\"staff_summary\": {\"totals\": {\"total_jobs\": 5, \"total_revenue\": 202750, \"total_earnings\": 0, \"total_completed_jobs\": 0, \"average_completion_rate\": 0}, \"summary\": {\"total_staff\": 4, \"average_rating\": \"5.0\", \"total_supervisors\": \"1\", \"total_normal_staff\": \"2\", \"total_customer_ratings\": \"0\", \"total_general_supervisors\": \"1\"}, \"staff_list\": [{\"ratings\": {\"rating_label\": \"Poor\", \"total_ratings\": 0, \"overall_rating\": 0, \"average_cleanliness\": 0, \"average_punctuality\": 0, \"average_satisfaction\": 0}, \"recent_jobs\": [], \"personal_info\": {\"id\": 21, \"email\": \"fourbrothers@gmail.com\", \"phone\": \"0677532140\", \"photo\": \"/uploads/staff/1777466967528.png\", \"gender\": \"Not specified\", \"address\": \"Not provided\", \"full_name\": \"Dau \", \"last_name\": \"\", \"first_name\": \"Dau\", \"staff_type\": \"supervisor\", \"joined_date\": \"2026-04-29T12:49:27.000Z\", \"staff_type_label\": \"Supervisor\"}, \"job_statistics\": {\"total_jobs\": 0, \"pending_jobs\": 0, \"total_revenue\": 0, \"cancelled_jobs\": 0, \"completed_jobs\": 0, \"confirmed_jobs\": 0, \"total_earnings\": 0, \"completion_rate\": 0, \"in_progress_jobs\": 0, \"collected_revenue\": 0}, \"current_assignments\": []}, {\"ratings\": {\"rating_label\": \"Poor\", \"total_ratings\": 0, \"overall_rating\": 0, \"average_cleanliness\": 0, \"average_punctuality\": 0, \"average_satisfaction\": 0}, \"recent_jobs\": [], \"personal_info\": {\"id\": 28, \"email\": \"mudrikdau1@gmail.com\", \"phone\": \"0777555777\", \"photo\": null, \"gender\": \"Not specified\", \"address\": \"Not provided\", \"full_name\": \"DAU Mudy\", \"last_name\": \"Mudy\", \"first_name\": \"DAU\", \"staff_type\": \"normal\", \"joined_date\": \"2026-06-08T09:26:21.000Z\", \"staff_type_label\": \"Staff\"}, \"job_statistics\": {\"total_jobs\": 0, \"pending_jobs\": 0, \"total_revenue\": 0, \"cancelled_jobs\": 0, \"completed_jobs\": 0, \"confirmed_jobs\": 0, \"total_earnings\": 0, \"completion_rate\": 0, \"in_progress_jobs\": 0, \"collected_revenue\": 0}, \"current_assignments\": []}, {\"ratings\": {\"rating_label\": \"Poor\", \"total_ratings\": 0, \"overall_rating\": 0, \"average_cleanliness\": 0, \"average_punctuality\": 0, \"average_satisfaction\": 0}, \"recent_jobs\": [], \"personal_info\": {\"id\": 29, \"email\": \"mudrikdau11@gmail.com\", \"phone\": \"0777555777\", \"photo\": null, \"gender\": \"Not specified\", \"address\": \"Not provided\", \"full_name\": \"DAU Mudy\", \"last_name\": \"Mudy\", \"first_name\": \"DAU\", \"staff_type\": \"general_supervisor\", \"joined_date\": \"2026-06-08T09:30:18.000Z\", \"staff_type_label\": \"General Supervisor\"}, \"job_statistics\": {\"total_jobs\": 0, \"pending_jobs\": 0, \"total_revenue\": 0, \"cancelled_jobs\": 0, \"completed_jobs\": 0, \"confirmed_jobs\": 0, \"total_earnings\": 0, \"completion_rate\": 0, \"in_progress_jobs\": 0, \"collected_revenue\": 0}, \"current_assignments\": []}, {\"ratings\": {\"rating_label\": \"Poor\", \"total_ratings\": 0, \"overall_rating\": 0, \"average_cleanliness\": 0, \"average_punctuality\": 0, \"average_satisfaction\": 0}, \"recent_jobs\": [], \"personal_info\": {\"id\": 20, \"email\": \"msuasauasus@gmail.com\", \"phone\": \"0677532140\", \"photo\": \"/uploads/staff/1777466934993.png\", \"gender\": \"Not specified\", \"address\": \"Not provided\", \"full_name\": \"MO 11\", \"last_name\": \"11\", \"first_name\": \"MO\", \"staff_type\": \"normal\", \"joined_date\": \"2026-04-29T12:48:55.000Z\", \"staff_type_label\": \"Staff\"}, \"job_statistics\": {\"total_jobs\": 5, \"pending_jobs\": 0, \"total_revenue\": 202750, \"cancelled_jobs\": 0, \"completed_jobs\": 0, \"confirmed_jobs\": 4, \"total_earnings\": 0, \"completion_rate\": 0, \"in_progress_jobs\": 1, \"collected_revenue\": 87000}, \"current_assignments\": [{\"id\": 1, \"status\": \"confirmed\", \"address\": \"Kijitonyama Street, Dar es Salaam\", \"total_price\": 43500, \"service_date\": \"2026-04-30T21:00:00.000Z\", \"service_name\": null, \"service_time\": \"10:00:00\", \"customer_name\": \"Mudrik Dau\"}, {\"id\": 7, \"status\": \"in_progress\", \"address\": \"Kijitonyama Street, Dar es Salaam\", \"total_price\": 43500, \"service_date\": \"2026-05-14T21:00:00.000Z\", \"service_name\": \"Deep House Cleaning\", \"service_time\": \"10:00:00\", \"customer_name\": \"John Doe\"}, {\"id\": 9, \"status\": \"confirmed\", \"address\": \"Kijitonyama Street, Dar es Salaam\", \"total_price\": 43500, \"service_date\": \"2026-05-25T21:00:00.000Z\", \"service_name\": \"Deep House Cleaning\", \"service_time\": \"10:00:00\", \"customer_name\": \"MO 11\"}]}], \"top_performers\": [{\"name\": \"Dau \", \"rating\": 0, \"staff_type\": \"Supervisor\", \"total_revenue\": 0, \"completed_jobs\": 0, \"completion_rate\": 0}, {\"name\": \"DAU Mudy\", \"rating\": 0, \"staff_type\": \"Staff\", \"total_revenue\": 0, \"completed_jobs\": 0, \"completion_rate\": 0}, {\"name\": \"DAU Mudy\", \"rating\": 0, \"staff_type\": \"General Supervisor\", \"total_revenue\": 0, \"completed_jobs\": 0, \"completion_rate\": 0}, {\"name\": \"MO 11\", \"rating\": 0, \"staff_type\": \"Staff\", \"total_revenue\": 202750, \"completed_jobs\": 0, \"completion_rate\": 0}], \"staff_distribution\": {\"data\": [\"1\", \"1\", \"2\"], \"labels\": [\"Supervisors\", \"General Supervisors\", \"Normal Staff\"]}}, \"booking_summary\": [{\"lowest_order\": \"25000.00\", \"total_extras\": \"159750.00\", \"gross_revenue\": \"463750.00\", \"highest_order\": \"47250.00\", \"earned_revenue\": \"0.00\", \"total_bookings\": 11, \"avg_order_value\": \"42159.090909\", \"total_discounts\": \"16000.00\", \"cancelled_bookings\": \"0\", \"completed_bookings\": \"0\"}], \"contractor_stats\": [{\"total_workers\": \"30\", \"contractor_type\": \"government\", \"active_contracts\": \"2\", \"expired_contracts\": \"0\", \"total_contractors\": 2, \"avg_contract_value\": \"25000000.000000\", \"completed_contracts\": \"0\", \"terminated_contracts\": \"0\", \"total_contract_value\": \"50000000.00\"}], \"location_analysis\": [{\"city\": \"Dar es Salaam\", \"booking_count\": 10, \"total_revenue\": \"416500.00\", \"unique_customers\": 5}, {\"city\": \"Zanzibar City\", \"booking_count\": 1, \"total_revenue\": \"47250.00\", \"unique_customers\": 1}], \"revenue_by_payment\": [{\"total_amount\": \"463750.00\", \"average_amount\": \"42159.090909\", \"payment_method\": \"cash\", \"transaction_count\": 11}], \"revenue_by_service\": [{\"avg_hours\": \"3.0000\", \"service_id\": 2, \"avg_cleaners\": \"2.0000\", \"service_name\": \"Deep House Cleaning\", \"average_price\": \"41041.666667\", \"booking_count\": 6, \"total_revenue\": \"246250.00\"}, {\"avg_hours\": \"3.0000\", \"service_id\": 1, \"avg_cleaners\": \"2.0000\", \"service_name\": null, \"average_price\": \"43500.000000\", \"booking_count\": 3, \"total_revenue\": \"130500.00\"}, {\"avg_hours\": \"3.0000\", \"service_id\": 3, \"avg_cleaners\": \"2.0000\", \"service_name\": \"Partial House Cleaning 2\", \"average_price\": \"43500.000000\", \"booking_count\": 1, \"total_revenue\": \"43500.00\"}, {\"avg_hours\": \"3.0000\", \"service_id\": 4, \"avg_cleaners\": \"2.0000\", \"service_name\": \"Bedroom Cleaning \", \"average_price\": \"43500.000000\", \"booking_count\": 1, \"total_revenue\": \"43500.00\"}], \"status_distribution\": [{\"count\": 4, \"status\": \"confirmed\", \"total_value\": \"159250.00\"}, {\"count\": 6, \"status\": \"pending\", \"total_value\": \"261000.00\"}, {\"count\": 1, \"status\": \"in_progress\", \"total_value\": \"43500.00\"}]}','2026-06-08 12:48:47'),(2,'staff_report','detailed','2026-01-01','2026-06-30',23,NULL,'{\"totals\": {\"total_jobs\": 5, \"total_revenue\": 202750, \"total_earnings\": 0, \"total_completed_jobs\": 0, \"average_completion_rate\": 0}, \"summary\": {\"total_staff\": 4, \"average_rating\": \"5.0\", \"total_supervisors\": \"1\", \"total_normal_staff\": \"2\", \"total_customer_ratings\": \"0\", \"total_general_supervisors\": \"1\"}, \"staff_list\": [{\"ratings\": {\"rating_label\": \"Poor\", \"total_ratings\": 0, \"overall_rating\": 0, \"average_cleanliness\": 0, \"average_punctuality\": 0, \"average_satisfaction\": 0}, \"recent_jobs\": [], \"personal_info\": {\"id\": 21, \"email\": \"fourbrothers@gmail.com\", \"phone\": \"0677532140\", \"photo\": \"/uploads/staff/1777466967528.png\", \"gender\": \"Not specified\", \"address\": \"Not provided\", \"full_name\": \"Dau \", \"last_name\": \"\", \"first_name\": \"Dau\", \"staff_type\": \"supervisor\", \"joined_date\": \"2026-04-29T12:49:27.000Z\", \"staff_type_label\": \"Supervisor\"}, \"job_statistics\": {\"total_jobs\": 0, \"pending_jobs\": 0, \"total_revenue\": 0, \"cancelled_jobs\": 0, \"completed_jobs\": 0, \"confirmed_jobs\": 0, \"total_earnings\": 0, \"completion_rate\": 0, \"in_progress_jobs\": 0, \"collected_revenue\": 0}, \"current_assignments\": []}, {\"ratings\": {\"rating_label\": \"Poor\", \"total_ratings\": 0, \"overall_rating\": 0, \"average_cleanliness\": 0, \"average_punctuality\": 0, \"average_satisfaction\": 0}, \"recent_jobs\": [], \"personal_info\": {\"id\": 28, \"email\": \"mudrikdau1@gmail.com\", \"phone\": \"0777555777\", \"photo\": null, \"gender\": \"Not specified\", \"address\": \"Not provided\", \"full_name\": \"DAU Mudy\", \"last_name\": \"Mudy\", \"first_name\": \"DAU\", \"staff_type\": \"normal\", \"joined_date\": \"2026-06-08T09:26:21.000Z\", \"staff_type_label\": \"Staff\"}, \"job_statistics\": {\"total_jobs\": 0, \"pending_jobs\": 0, \"total_revenue\": 0, \"cancelled_jobs\": 0, \"completed_jobs\": 0, \"confirmed_jobs\": 0, \"total_earnings\": 0, \"completion_rate\": 0, \"in_progress_jobs\": 0, \"collected_revenue\": 0}, \"current_assignments\": []}, {\"ratings\": {\"rating_label\": \"Poor\", \"total_ratings\": 0, \"overall_rating\": 0, \"average_cleanliness\": 0, \"average_punctuality\": 0, \"average_satisfaction\": 0}, \"recent_jobs\": [], \"personal_info\": {\"id\": 29, \"email\": \"mudrikdau11@gmail.com\", \"phone\": \"0777555777\", \"photo\": null, \"gender\": \"Not specified\", \"address\": \"Not provided\", \"full_name\": \"DAU Mudy\", \"last_name\": \"Mudy\", \"first_name\": \"DAU\", \"staff_type\": \"general_supervisor\", \"joined_date\": \"2026-06-08T09:30:18.000Z\", \"staff_type_label\": \"General Supervisor\"}, \"job_statistics\": {\"total_jobs\": 0, \"pending_jobs\": 0, \"total_revenue\": 0, \"cancelled_jobs\": 0, \"completed_jobs\": 0, \"confirmed_jobs\": 0, \"total_earnings\": 0, \"completion_rate\": 0, \"in_progress_jobs\": 0, \"collected_revenue\": 0}, \"current_assignments\": []}, {\"ratings\": {\"rating_label\": \"Poor\", \"total_ratings\": 0, \"overall_rating\": 0, \"average_cleanliness\": 0, \"average_punctuality\": 0, \"average_satisfaction\": 0}, \"recent_jobs\": [], \"personal_info\": {\"id\": 20, \"email\": \"msuasauasus@gmail.com\", \"phone\": \"0677532140\", \"photo\": \"/uploads/staff/1777466934993.png\", \"gender\": \"Not specified\", \"address\": \"Not provided\", \"full_name\": \"MO 11\", \"last_name\": \"11\", \"first_name\": \"MO\", \"staff_type\": \"normal\", \"joined_date\": \"2026-04-29T12:48:55.000Z\", \"staff_type_label\": \"Staff\"}, \"job_statistics\": {\"total_jobs\": 5, \"pending_jobs\": 0, \"total_revenue\": 202750, \"cancelled_jobs\": 0, \"completed_jobs\": 0, \"confirmed_jobs\": 4, \"total_earnings\": 0, \"completion_rate\": 0, \"in_progress_jobs\": 1, \"collected_revenue\": 87000}, \"current_assignments\": [{\"id\": 1, \"status\": \"confirmed\", \"address\": \"Kijitonyama Street, Dar es Salaam\", \"total_price\": 43500, \"service_date\": \"2026-04-30T21:00:00.000Z\", \"service_name\": null, \"service_time\": \"10:00:00\", \"customer_name\": \"Mudrik Dau\"}, {\"id\": 7, \"status\": \"in_progress\", \"address\": \"Kijitonyama Street, Dar es Salaam\", \"total_price\": 43500, \"service_date\": \"2026-05-14T21:00:00.000Z\", \"service_name\": \"Deep House Cleaning\", \"service_time\": \"10:00:00\", \"customer_name\": \"John Doe\"}, {\"id\": 9, \"status\": \"confirmed\", \"address\": \"Kijitonyama Street, Dar es Salaam\", \"total_price\": 43500, \"service_date\": \"2026-05-25T21:00:00.000Z\", \"service_name\": \"Deep House Cleaning\", \"service_time\": \"10:00:00\", \"customer_name\": \"MO 11\"}]}], \"top_performers\": [{\"name\": \"Dau \", \"rating\": 0, \"staff_type\": \"Supervisor\", \"total_revenue\": 0, \"completed_jobs\": 0, \"completion_rate\": 0}, {\"name\": \"DAU Mudy\", \"rating\": 0, \"staff_type\": \"Staff\", \"total_revenue\": 0, \"completed_jobs\": 0, \"completion_rate\": 0}, {\"name\": \"DAU Mudy\", \"rating\": 0, \"staff_type\": \"General Supervisor\", \"total_revenue\": 0, \"completed_jobs\": 0, \"completion_rate\": 0}, {\"name\": \"MO 11\", \"rating\": 0, \"staff_type\": \"Staff\", \"total_revenue\": 202750, \"completed_jobs\": 0, \"completion_rate\": 0}], \"staff_distribution\": {\"data\": [\"1\", \"1\", \"2\"], \"labels\": [\"Supervisors\", \"General Supervisors\", \"Normal Staff\"]}}','2026-06-08 12:50:06');
 /*!40000 ALTER TABLE `reports` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -744,6 +854,45 @@ INSERT INTO `staff_attendance` VALUES (1,1,20,'2026-05-26',1,10000.00,21,'2026-0
 UNLOCK TABLES;
 
 --
+-- Table structure for table `staff_issues`
+--
+
+DROP TABLE IF EXISTS `staff_issues`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `staff_issues` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `staff_id` int NOT NULL,
+  `booking_id` int DEFAULT NULL,
+  `issue_type` enum('sick','unable_to_attend','personal_emergency','transport_issue','family_emergency','other') NOT NULL,
+  `issue_title` varchar(255) NOT NULL,
+  `issue_description` text NOT NULL,
+  `expected_return_date` date NOT NULL,
+  `status` enum('pending','reviewed','resolved','rejected') DEFAULT 'pending',
+  `admin_response` text,
+  `resolved_at` datetime DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_staff_id` (`staff_id`),
+  KEY `idx_booking_id` (`booking_id`),
+  KEY `idx_status` (`status`),
+  CONSTRAINT `fk_issue_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_issue_staff` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `staff_issues`
+--
+
+LOCK TABLES `staff_issues` WRITE;
+/*!40000 ALTER TABLE `staff_issues` DISABLE KEYS */;
+INSERT INTO `staff_issues` VALUES (1,29,7,'sick','Feeling unwell - Cannot attend today\'s shift','I woke up with high fever and body aches. I have visited the clinic and was advised to rest for 2 days. I am unable to attend today\'s scheduled cleaning job at Kijitonyama.','2026-06-10','pending',NULL,NULL,'2026-06-08 10:33:05','2026-06-08 10:33:05'),(3,29,7,'sick','Feeling unwell - Cannot attend today\'s shift','I woke up with high fever and body aches. I have visited the clinic and was advised to rest for 2 days. I am unable to attend today\'s scheduled cleaning job at Kijitonyama.','2026-06-10','pending',NULL,NULL,'2026-06-08 10:33:36','2026-06-08 10:33:36'),(5,29,1,'sick','Feeling unwell - Cannot attend today\'s shift','I woke up with high fever and body aches. I have visited the clinic and was advised to rest for 2 days. I am unable to attend today\'s scheduled cleaning job at Kijitonyama.','2026-06-10','pending',NULL,NULL,'2026-06-08 10:33:53','2026-06-08 10:33:53'),(6,29,2,'sick','Feeling unwell - Cannot attend today\'s shift','I woke up with high fever and body aches. I have visited the clinic and was advised to rest for 2 days. I am unable to attend today\'s scheduled cleaning job at Kijitonyama.','2026-06-10','pending',NULL,NULL,'2026-06-08 10:33:58','2026-06-08 10:33:58'),(7,29,8,'sick','Feeling unwell - Cannot attend today\'s shift','I woke up with high fever and body aches. I have visited the clinic and was advised to rest for 2 days. I am unable to attend today\'s scheduled cleaning job at Kijitonyama.','2026-06-10','pending',NULL,NULL,'2026-06-08 10:34:04','2026-06-08 10:34:04');
+/*!40000 ALTER TABLE `staff_issues` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `staff_rating_summary`
 --
 
@@ -874,7 +1023,7 @@ CREATE TABLE `supervisor_chats` (
   `attachment_url` varchar(500) DEFAULT NULL,
   `report_id` int DEFAULT NULL,
   `is_read` tinyint(1) DEFAULT '0',
-  `sender_role` enum('supervisor','admin') NOT NULL,
+  `sender_role` enum('supervisor','admin','general_supervisor') DEFAULT 'supervisor',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_supervisor_id` (`supervisor_id`),
@@ -884,7 +1033,7 @@ CREATE TABLE `supervisor_chats` (
   CONSTRAINT `chat_admin_fk` FOREIGN KEY (`admin_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `chat_report_fk` FOREIGN KEY (`report_id`) REFERENCES `supervisor_reports` (`id`) ON DELETE SET NULL,
   CONSTRAINT `chat_supervisor_fk` FOREIGN KEY (`supervisor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -893,7 +1042,7 @@ CREATE TABLE `supervisor_chats` (
 
 LOCK TABLES `supervisor_chats` WRITE;
 /*!40000 ALTER TABLE `supervisor_chats` DISABLE KEYS */;
-INSERT INTO `supervisor_chats` VALUES (1,21,23,'? Weekly report for ZSSF - Zanzibar Social Security Fund (Week ending Sat May 30 2026 00:00:00 GMT+0300 (East Africa Time)) has been submitted.',NULL,1,0,'supervisor','2026-05-26 11:00:29'),(2,21,23,'Hello Admin, I have submitted the weekly report for ZSSF. Please review.',NULL,1,0,'supervisor','2026-05-26 11:01:06'),(3,21,23,'Here is the attendance report for this week\n','/uploads/chats/chat_1779793339597_371105600.png',1,0,'supervisor','2026-05-26 11:02:19');
+INSERT INTO `supervisor_chats` VALUES (1,21,23,'? Weekly report for ZSSF - Zanzibar Social Security Fund (Week ending Sat May 30 2026 00:00:00 GMT+0300 (East Africa Time)) has been submitted.',NULL,1,0,'supervisor','2026-05-26 11:00:29'),(2,21,23,'Hello Admin, I have submitted the weekly report for ZSSF. Please review.',NULL,1,0,'supervisor','2026-05-26 11:01:06'),(3,21,23,'Here is the attendance report for this week\n','/uploads/chats/chat_1779793339597_371105600.png',1,0,'supervisor','2026-05-26 11:02:19'),(4,29,23,'? Weekly report (Week ending Sat May 30 2026 00:00:00 GMT+0300 (East Africa Time)) has been submitted for review.',NULL,NULL,0,'general_supervisor','2026-06-08 09:55:15'),(5,29,23,'Hello Admin, I have submitted the weekly report for ZSSF. Please review.',NULL,1,0,'general_supervisor','2026-06-08 09:56:10');
 /*!40000 ALTER TABLE `supervisor_chats` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -990,7 +1139,7 @@ CREATE TABLE `users` (
   `web_notifications` tinyint(1) DEFAULT '1',
   `photo` varchar(255) DEFAULT NULL,
   `profile_photo` varchar(255) DEFAULT NULL,
-  `staff_type` enum('normal','supervisor') DEFAULT 'normal',
+  `staff_type` enum('normal','supervisor','general_supervisor') DEFAULT 'normal',
   `rating` decimal(3,2) DEFAULT '5.00',
   `reset_otp` varchar(10) DEFAULT NULL COMMENT 'OTP for password reset',
   `reset_otp_expiry` datetime DEFAULT NULL COMMENT 'Expiry time for password reset OTP',
@@ -1000,7 +1149,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   KEY `idx_reset_otp` (`reset_otp`),
   KEY `idx_reset_otp_expiry` (`reset_otp_expiry`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1009,7 +1158,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51','staff','local','0677532140',1,1,'1777466934993.png',NULL,'normal',5.00,NULL,NULL,0,0.00),(21,'Dau','','fourbrothers@gmail.com','$2b$10$57XdKCG64vJLMXh0bzPu2OPw0boCF6H6i5dm.ybP4Q5Oy3jraqjOW',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,'staff','local','0677532140',1,1,'1777466967528.png',NULL,'supervisor',5.00,NULL,NULL,0,0.00),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i',NULL,NULL,'2026-05-14 09:17:28',NULL,NULL,'admin','local',NULL,0,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(24,'John','Doe','mudydau@icloud.com','$2b$10$1X3Y7rSZRjYppzx3JcJz0O8Uy/GKJAY2Z5eZJSRzx1iTIxvr9n13q','Kijitonyama Street','Male','2026-05-14 09:20:50',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(26,'MO','11','molittle1011@gmail.com','$2b$10$Bxax9D8HmRNffnbrb9JTt.9BE.um6K8R4dX/4P8PnjXWbkRD9s2Z2','Kijitonyama Street','Male','2026-05-14 13:13:47','667106','2026-05-26 10:57:41','user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00);
+INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51','staff','local','0677532140',1,1,'1777466934993.png',NULL,'normal',5.00,NULL,NULL,0,0.00),(21,'Dau','','fourbrothers@gmail.com','$2b$10$57XdKCG64vJLMXh0bzPu2OPw0boCF6H6i5dm.ybP4Q5Oy3jraqjOW',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,'staff','local','0677532140',1,1,'1777466967528.png',NULL,'supervisor',5.00,NULL,NULL,0,0.00),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i',NULL,NULL,'2026-05-14 09:17:28',NULL,NULL,'admin','local',NULL,0,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(24,'John','Doe','mudydau@icloud.com','$2b$10$1X3Y7rSZRjYppzx3JcJz0O8Uy/GKJAY2Z5eZJSRzx1iTIxvr9n13q','Kijitonyama Street','Male','2026-05-14 09:20:50',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(27,'MO','11','molittle1011@gmail.com','$2b$10$cmw3cq12kmrxJeFq4j.Vqecb47WOKAxJ/27oHyGQBHHeCBMMFZF/G','Fuoni Kisimani','Male','2026-05-26 13:53:18','613316','2026-05-26 17:23:26','user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(28,'DAU','Mudy','mudrikdau1@gmail.com','$2b$10$nzBbBA/b1UHDV1Rzi7aE5OSFqBOLdF.ssbtiQ4MDwXgNNxY/YK1PO',NULL,NULL,'2026-06-08 09:26:21',NULL,NULL,'staff','local','0777555777',1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(29,'DAU','Mudy','mudrikdau11@gmail.com','$2b$10$XUxuVqfDpgOa2bBkvNp6K.brdeHR397iF3cX3ifraC3oog27ENwAC',NULL,NULL,'2026-06-08 09:30:18',NULL,NULL,'staff','local','0777555777',1,1,NULL,NULL,'general_supervisor',5.00,NULL,NULL,0,0.00);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -1022,4 +1171,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-26 15:32:56
+-- Dump completed on 2026-06-08 16:01:11
