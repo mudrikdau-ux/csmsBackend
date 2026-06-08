@@ -288,6 +288,30 @@ const sendOTPEmailDirect = async (email, name, otp, expiryMinutes = 5) => {
     return true;
 };
 
+const sendInvoiceEmail = async (userId, invoiceData) => {
+    const subject = `Invoice #${invoiceData.invoice_number} - CleanSpark`;
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
+            <div style="background: #1a5276; padding: 30px; text-align: center;">
+                <h1 style="color: #fff;">📄 Invoice Ready</h1>
+            </div>
+            <div style="padding: 30px;">
+                <h2>Hello,</h2>
+                <p>Your invoice is ready for review.</p>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <p><strong>Invoice #:</strong> ${invoiceData.invoice_number}</p>
+                    <p><strong>Total Amount:</strong> TZS ${invoiceData.total_amount.toLocaleString()}</p>
+                    <p><strong>Due Date:</strong> ${invoiceData.due_date}</p>
+                </div>
+                <p>Please login to your account to view and download the invoice.</p>
+            </div>
+        </div>
+    `;
+    
+    return sendEmailIfEnabled(userId, subject, html, 'invoice');
+};
+
+
 module.exports = {
     sendEmailIfEnabled,
     sendBookingConfirmation,
@@ -295,5 +319,6 @@ module.exports = {
     sendBookingReminder,
     sendPromotionalEmail,
     sendWelcomeEmail,
-    sendOTPEmailDirect
+    sendOTPEmailDirect,
+    sendInvoiceEmail
 };

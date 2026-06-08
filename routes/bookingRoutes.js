@@ -16,49 +16,33 @@ const {
     getBookingStats,
     getReceipt,
     cancelMyBooking,
-    getStaffAssignments
+    getStaffAssignments,
+    updateBookingEstimationController,
+    generateAndSendInvoice,
+    getMyInvoices,
+    downloadCustomerInvoice
 } = require('../controllers/bookingController');
 
 // ==================== CUSTOMER ROUTES ====================
-
-// Create booking (authenticated users only)
 router.post('/', verifyToken, validateBooking, createBookingController);
-
-// Get my bookings with filters (upcoming, delivered, cancelled, unpaid, etc.)
 router.get('/my-bookings', verifyToken, getMyBookings);
-
-// Get booking receipt (owner or admin)
+router.get('/my-invoices', verifyToken, getMyInvoices);
+router.get('/invoices/:id/download', verifyToken, downloadCustomerInvoice);
 router.get('/:id/receipt', verifyToken, getReceipt);
-
-// Cancel my booking
 router.put('/:id/cancel', verifyToken, cancelMyBooking);
 
 // ==================== ADMIN ROUTES ====================
-
-// Get booking statistics
 router.get('/stats', verifyAdmin, getBookingStats);
-
-// Get all bookings with filters
 router.get('/', verifyAdmin, getAllBookingsController);
-
-// Get single booking details
 router.get('/:id', verifyAdmin, getBookingDetails);
-
-// Update booking status
 router.put('/:id/status', verifyAdmin, updateBookingStatusController);
-
-// Update payment status
 router.put('/:id/payment-status', verifyAdmin, updatePaymentStatus);
-
-// Assign staff to booking
 router.post('/:id/assign-staff', verifyAdmin, assignStaff);
-
-// Remove staff from booking
 router.delete('/:id/assign-staff', verifyAdmin, removeStaff);
+router.post('/:id/estimation', verifyAdmin, updateBookingEstimationController);
+router.post('/:id/generate-invoice', verifyAdmin, generateAndSendInvoice);
 
 // ==================== STAFF ROUTES ====================
-
-// Staff views their assigned bookings
 router.get('/staff/my-assignments', verifyStaff, getStaffAssignments);
 
 module.exports = router;

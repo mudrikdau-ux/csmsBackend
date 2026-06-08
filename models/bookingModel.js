@@ -5,14 +5,16 @@ const createBooking = async (data) => {
         INSERT INTO bookings (
             user_id, service_id,
             cleaners, hours, frequency, materials,
-            property_type,
-            address, city, landmark, latitude, longitude,
-            service_date, service_time, instructions,
-            first_name, last_name, email, phone,
-            payment_method,
-            base_price, extras, discount, total_price,
-            status, payment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            property_type, property_type_detail, bedrooms, bathrooms, dirt_level, cleaning_frequency,
+            address, area_district, city, region, landmark, building_name, floor_number,
+            latitude, longitude, pin_latitude, pin_longitude,
+            service_date, service_time, instructions, special_instructions_cleaners,
+            first_name, last_name, email, phone, alternative_phone, preferred_communication,
+            payment_method, base_price, extras, discount, total_price,
+            estimated_service_cost, labor_cost, transport_cost, equipment_cost_admin,
+            tax_rate_admin, tax_amount_admin, discount_admin, final_total,
+            status, payment_status, estimation_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     return db.query(sql, [
@@ -23,25 +25,48 @@ const createBooking = async (data) => {
         data.frequency,
         data.materials || false,
         data.property_type,
+        data.property_type_detail || null,
+        data.bedrooms || null,
+        data.bathrooms || null,
+        data.dirt_level || null,
+        data.cleaning_frequency || null,
         data.address,
+        data.area_district || null,
         data.city,
+        data.region || null,
         data.landmark || null,
+        data.building_name || null,
+        data.floor_number || null,
         data.latitude || null,
         data.longitude || null,
+        data.pin_latitude || null,
+        data.pin_longitude || null,
         data.service_date,
         data.service_time,
         data.instructions || null,
+        data.special_instructions_cleaners || null,
         data.first_name,
         data.last_name,
         data.email,
         data.phone,
+        data.alternative_phone || null,
+        data.preferred_communication || null,
         data.payment_method,
         data.base_price,
         data.extras,
         data.discount,
         data.total_price,
+        null, // estimated_service_cost
+        null, // labor_cost
+        null, // transport_cost
+        null, // equipment_cost_admin
+        null, // tax_rate_admin
+        null, // tax_amount_admin
+        null, // discount_admin
+        null, // final_total
         data.status || 'pending',
-        data.payment_status || 'unpaid'
+        data.payment_status || 'unpaid',
+        data.estimation_status || 'pending'
     ]);
 };
 
@@ -55,6 +80,7 @@ const getAllBookings = async (filters = {}) => {
 
     if (filters.user_id) { sql += ` AND user_id = ?`; values.push(filters.user_id); }
     if (filters.status) { sql += ` AND status = ?`; values.push(filters.status); }
+    if (filters.estimation_status) { sql += ` AND estimation_status = ?`; values.push(filters.estimation_status); }
     if (filters.payment_status) { sql += ` AND payment_status = ?`; values.push(filters.payment_status); }
     if (filters.date_from) { sql += ` AND service_date >= ?`; values.push(filters.date_from); }
     if (filters.date_to) { sql += ` AND service_date <= ?`; values.push(filters.date_to); }
@@ -73,6 +99,7 @@ const getBookingsByUserId = async (userId, filters = {}) => {
     const values = [userId];
 
     if (filters.status) { sql += ` AND status = ?`; values.push(filters.status); }
+    if (filters.estimation_status) { sql += ` AND estimation_status = ?`; values.push(filters.estimation_status); }
     if (filters.payment_status) { sql += ` AND payment_status = ?`; values.push(filters.payment_status); }
     if (filters.service_id) { sql += ` AND service_id = ?`; values.push(filters.service_id); }
     if (filters.service_date) { sql += ` AND service_date = ?`; values.push(filters.service_date); }
@@ -108,6 +135,7 @@ const getBookingCount = async (filters = {}) => {
     const values = [];
 
     if (filters.status) { sql += ` AND status = ?`; values.push(filters.status); }
+    if (filters.estimation_status) { sql += ` AND estimation_status = ?`; values.push(filters.estimation_status); }
     if (filters.payment_status) { sql += ` AND payment_status = ?`; values.push(filters.payment_status); }
     if (filters.user_id) { sql += ` AND user_id = ?`; values.push(filters.user_id); }
     if (filters.assigned_staff_id) { sql += ` AND assigned_staff_id = ?`; values.push(filters.assigned_staff_id); }
@@ -128,6 +156,41 @@ const getStaffBookings = async (staffId, filters = {}) => {
     return db.query(sql, values);
 };
 
+const updateBookingEstimation = async (id, data) => {
+    const sql = `
+        UPDATE bookings SET
+            estimated_service_cost = ?,
+            labor_cost = ?,
+            transport_cost = ?,
+            equipment_cost_admin = ?,
+            tax_rate_admin = ?,
+            tax_amount_admin = ?,
+            discount_admin = ?,
+            final_total = ?,
+            estimation_status = 'estimated'
+        WHERE id = ?
+    `;
+
+    return db.query(sql, [
+        data.estimated_service_cost,
+        data.labor_cost,
+        data.transport_cost,
+        data.equipment_cost_admin,
+        data.tax_rate_admin,
+        data.tax_amount_admin,
+        data.discount_admin,
+        data.final_total,
+        id
+    ]);
+};
+
+const updateInvoiceGenerated = async (id, invoicePath) => {
+    return db.query(
+        `UPDATE bookings SET estimation_status = 'invoiced', invoice_generated_at = NOW(), invoice_pdf_path = ? WHERE id = ?`,
+        [invoicePath, id]
+    );
+};
+
 module.exports = {
     createBooking,
     getBookingById,
@@ -138,5 +201,7 @@ module.exports = {
     assignStaffToBooking,
     removeStaffAssignment,
     getBookingCount,
-    getStaffBookings
+    getStaffBookings,
+    updateBookingEstimation,
+    updateInvoiceGenerated
 };

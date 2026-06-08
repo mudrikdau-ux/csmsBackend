@@ -8,15 +8,210 @@ const {
     assignStaffToBooking,
     removeStaffAssignment,
     getBookingCount,
-    getStaffBookings
+    getStaffBookings,
+    updateBookingEstimation,
+    updateInvoiceGenerated
 } = require('../models/bookingModel');
+
+const {
+    createCustomerInvoice,
+    getCustomerInvoiceById,
+    getCustomerInvoicesByUserId,
+    updateInvoiceStatus,
+    updateInvoicePdfPath
+} = require('../models/customerInvoiceModel');
 
 const { getServiceById } = require('../models/serviceModel');
 const { getStaffById } = require('../models/userModel');
-const { sendBookingConfirmation, sendBookingStatusUpdate } = require('../utils/notifications');
+const { sendBookingConfirmation, sendBookingStatusUpdate, sendInvoiceEmail } = require('../utils/notifications');
 const { isAutoAssignEnabled } = require('../models/adminSettingsModel');
 const { sendNewBookingNotification } = require('./adminSettingsController');
 const db = require('../config/db');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
+
+// ==================== HELPER: CALCULATE DYNAMIC PRICE ====================
+
+const calculateDynamicPrice = (servicePrice, bedrooms, bathrooms, dirtLevel, cleaningFrequency) => {
+    let basePrice = servicePrice;
+    
+    // Size adjustment based on bedrooms and bathrooms
+    let sizeAdjustment = 0;
+    if (bedrooms) {
+        sizeAdjustment += bedrooms * 5000; // TZS 5,000 per bedroom
+    }
+    if (bathrooms) {
+        sizeAdjustment += bathrooms * 3000; // TZS 3,000 per bathroom
+    }
+    
+    // Condition adjustment based on dirt level
+    let conditionAdjustment = 0;
+    switch(dirtLevel) {
+        case 'light':
+            conditionAdjustment = 0;
+            break;
+        case 'moderate':
+            conditionAdjustment = basePrice * 0.15; // 15% extra
+            break;
+        case 'heavy':
+            conditionAdjustment = basePrice * 0.30; // 30% extra
+            break;
+        default:
+            conditionAdjustment = 0;
+    }
+    
+    // Frequency discount
+    let frequencyDiscount = 0;
+    switch(cleaningFrequency) {
+        case 'weekly':
+            frequencyDiscount = basePrice * 0.10; // 10% off
+            break;
+        case 'monthly':
+            frequencyDiscount = basePrice * 0.05; // 5% off
+            break;
+        default:
+            frequencyDiscount = 0;
+    }
+    
+    const subtotal = basePrice + sizeAdjustment + conditionAdjustment;
+    const total = subtotal - frequencyDiscount;
+    
+    return {
+        basePrice,
+        sizeAdjustment,
+        conditionAdjustment,
+        frequencyDiscount,
+        total
+    };
+};
+
+// ==================== HELPER: GENERATE INVOICE PDF ====================
+
+const generateInvoicePDF = async (invoice) => {
+    const invoicesDir = path.join(__dirname, '..', 'invoices', 'customer');
+    if (!fs.existsSync(invoicesDir)) {
+        fs.mkdirSync(invoicesDir, { recursive: true });
+    }
+    
+    const filename = `invoice_${invoice.invoice_number}.pdf`;
+    const filePath = path.join(invoicesDir, filename);
+    
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+        const stream = fs.createWriteStream(filePath);
+        doc.pipe(stream);
+        
+        // Header
+        doc.rect(0, 0, doc.page.width, 80).fill('#1a5276');
+        doc.fillColor('#ffffff').fontSize(24).font('Helvetica-Bold').text('CleanSpark', 50, 25);
+        doc.fontSize(10).text('Professional Cleaning Services', 50, 55);
+        
+        // Invoice Title
+        doc.fillColor('#2c3e50').fontSize(18).font('Helvetica-Bold').text('INVOICE', 50, 110);
+        doc.fontSize(10).font('Helvetica').text(`Invoice #: ${invoice.invoice_number}`, 50, 135);
+        doc.text(`Date: ${new Date(invoice.invoice_date).toLocaleDateString()}`, 50, 150);
+        doc.text(`Due Date: ${new Date(invoice.due_date).toLocaleDateString()}`, 50, 165);
+        
+        // Customer Info
+        let yPos = 210;
+        doc.fontSize(12).font('Helvetica-Bold').text('Bill To:', 50, yPos);
+        yPos += 20;
+        doc.fontSize(10).font('Helvetica');
+        doc.text(`${invoice.first_name} ${invoice.last_name}`, 50, yPos);
+        yPos += 15;
+        doc.text(invoice.email, 50, yPos);
+        yPos += 15;
+        if (invoice.phone) doc.text(invoice.phone, 50, yPos);
+        yPos += 15;
+        doc.text(`${invoice.address}, ${invoice.city}`, 50, yPos);
+        
+        // Service Details
+        yPos = 320;
+        doc.fontSize(12).font('Helvetica-Bold').text('Service Details:', 50, yPos);
+        yPos += 25;
+        doc.fontSize(10).font('Helvetica');
+        doc.text(`Service: ${invoice.service_name}`, 50, yPos);
+        yPos += 20;
+        doc.text(`Date: ${invoice.service_date} at ${invoice.service_time}`, 50, yPos);
+        
+        // Pricing Table
+        yPos = 400;
+        const tableTop = yPos;
+        const col1 = 50;
+        const col3 = 450;
+        
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text('Description', col1, tableTop);
+        doc.text('Amount (TZS)', col3, tableTop, { width: 100, align: 'right' });
+        
+        doc.moveTo(col1, tableTop + 15).lineTo(doc.page.width - 50, tableTop + 15).stroke();
+        
+        let rowY = tableTop + 25;
+        doc.font('Helvetica');
+        
+        const items = [
+            ['Service Cost', invoice.service_cost],
+            ['Labor Cost', invoice.labor_cost],
+            ['Transport Cost', invoice.transport_cost],
+            ['Equipment Cost', invoice.equipment_cost]
+        ];
+        
+        items.forEach(item => {
+            if (item[1] > 0) {
+                doc.text(item[0], col1, rowY);
+                doc.text(item[1].toLocaleString(), col3, rowY, { width: 100, align: 'right' });
+                rowY += 20;
+            }
+        });
+        
+        rowY += 10;
+        doc.moveTo(col1, rowY).lineTo(doc.page.width - 50, rowY).stroke();
+        rowY += 10;
+        
+        doc.font('Helvetica-Bold');
+        doc.text('Subtotal', col1, rowY);
+        doc.text((invoice.service_cost + invoice.labor_cost + invoice.transport_cost + invoice.equipment_cost).toLocaleString(), col3, rowY, { width: 100, align: 'right' });
+        rowY += 20;
+        
+        if (invoice.tax_rate > 0) {
+            doc.text(`Tax (${invoice.tax_rate}%)`, col1, rowY);
+            doc.text(invoice.tax_amount.toLocaleString(), col3, rowY, { width: 100, align: 'right' });
+            rowY += 20;
+        }
+        
+        if (invoice.discount_amount > 0) {
+            doc.text('Discount', col1, rowY);
+            doc.text(`-${invoice.discount_amount.toLocaleString()}`, col3, rowY, { width: 100, align: 'right' });
+            rowY += 20;
+        }
+        
+        doc.moveTo(col1, rowY).lineTo(doc.page.width - 50, rowY).stroke();
+        rowY += 10;
+        
+        doc.fontSize(14).fillColor('#1a5276');
+        doc.text('TOTAL', col1, rowY);
+        doc.text(invoice.total_amount.toLocaleString(), col3, rowY, { width: 100, align: 'right' });
+        
+        // Notes
+        if (invoice.notes) {
+            rowY += 50;
+            doc.fontSize(10).fillColor('#7f8c8d');
+            doc.text('Notes:', 50, rowY);
+            doc.text(invoice.notes, 50, rowY + 15);
+        }
+        
+        // Footer
+        const footerY = doc.page.height - 50;
+        doc.fontSize(8).fillColor('#95a5a6');
+        doc.text('Thank you for choosing CleanSpark!', 50, footerY, { align: 'center', width: doc.page.width - 100 });
+        
+        doc.end();
+        
+        stream.on('finish', () => resolve(filePath));
+        stream.on('error', reject);
+    });
+};
 
 // ==================== AUTO-ASSIGN STAFF ====================
 
@@ -79,7 +274,7 @@ const getPaymentStatusLabel = (status) => {
     return status === 'paid' ? 'Paid ✅' : 'Unpaid ❌';
 };
 
-// ==================== CREATE BOOKING (AUTHENTICATED ONLY) ====================
+// ==================== CREATE BOOKING (WITH DYNAMIC PRICING) ====================
 
 const createBookingController = async (req, res) => {
     try {
@@ -114,41 +309,31 @@ const createBookingController = async (req, res) => {
             });
         }
 
-        // Price calculation
-        const pricePerHour = data.price_per_hour || (parseFloat(service.price) / service.duration * 60) || 5000;
-        const base = data.cleaners * data.hours * pricePerHour;
+        // Calculate dynamic price based on detailed inputs
+        const pricing = calculateDynamicPrice(
+            parseFloat(service.price),
+            data.bedrooms,
+            data.bathrooms,
+            data.dirt_level,
+            data.cleaning_frequency
+        );
 
-        let extras = 0;
-        if (data.materials === true || data.materials === 'true') {
-            extras += 10000;
-        }
-        if (data.payment_method === 'cash') {
-            extras += 5000;
-        }
-
-        let discount = 0;
-        if (data.frequency === 'weekly') {
-            discount = base * 0.05;
-        }
-
-        const total = base + extras - discount;
-
-        // Create booking
+        // Create booking with detailed info
         const result = await createBooking({
             ...data,
             user_id: userId,
             email: userEmail,
-            base_price: base,
-            extras,
-            discount,
-            total_price: total,
+            base_price: pricing.basePrice,
+            extras: pricing.sizeAdjustment + pricing.conditionAdjustment,
+            discount: pricing.frequencyDiscount,
+            total_price: pricing.total,
             status: 'pending',
             payment_status: 'unpaid'
         });
 
         const bookingId = result.insertId;
 
-        // ✅ SEND BOOKING CONFIRMATION EMAIL TO CUSTOMER
+        // Send booking confirmation email to customer
         sendBookingConfirmation(userId, {
             id: bookingId,
             customer_name: `${data.first_name} ${data.last_name}`,
@@ -157,14 +342,15 @@ const createBookingController = async (req, res) => {
             service_time: data.service_time,
             address: data.address,
             city: data.city,
-            total_price: total,
-            assigned_staff: null
+            total_price: pricing.total,
+            assigned_staff: null,
+            estimated: true
         });
 
-        // ✅ AUTO-ASSIGN STAFF (if enabled in settings)
+        // Auto-assign staff (if enabled in settings)
         const assignedStaff = await autoAssignStaff(bookingId, data.service_date, data.service_time);
 
-        // ✅ SEND ADMIN NOTIFICATION (if enabled in settings)
+        // Send admin notification (if enabled in settings)
         sendNewBookingNotification({
             id: bookingId,
             customer_name: `${data.first_name} ${data.last_name}`,
@@ -173,14 +359,14 @@ const createBookingController = async (req, res) => {
             service_time: data.service_time,
             address: data.address,
             city: data.city,
-            total_price: total,
+            total_price: pricing.total,
             payment_method: data.payment_method,
             assigned_staff: assignedStaff ? assignedStaff.name : null
         });
 
         res.status(201).json({
             success: true,
-            message: 'Booking created successfully',
+            message: 'Booking created successfully. Admin will review and provide final pricing.',
             booking: {
                 id: bookingId,
                 user_id: userId,
@@ -196,20 +382,36 @@ const createBookingController = async (req, res) => {
                 frequency: data.frequency,
                 materials_provided: data.materials || false,
                 property_type: data.property_type,
+                property_type_detail: data.property_type_detail,
+                bedrooms: data.bedrooms,
+                bathrooms: data.bathrooms,
+                dirt_level: data.dirt_level,
+                cleaning_frequency: data.cleaning_frequency,
                 address: data.address,
+                area_district: data.area_district,
                 city: data.city,
+                region: data.region,
                 landmark: data.landmark || null,
+                building_name: data.building_name,
+                floor_number: data.floor_number,
+                pin_latitude: data.pin_latitude,
+                pin_longitude: data.pin_longitude,
                 payment_method: data.payment_method,
+                preferred_communication: data.preferred_communication,
+                alternative_phone: data.alternative_phone,
+                special_instructions_cleaners: data.special_instructions_cleaners,
                 pricing: {
-                    base_price: base,
-                    extras: extras,
-                    discount: discount,
-                    total_price: total
+                    base_price: pricing.basePrice,
+                    size_adjustment: pricing.sizeAdjustment,
+                    condition_adjustment: pricing.conditionAdjustment,
+                    frequency_discount: pricing.frequencyDiscount,
+                    estimated_total: pricing.total
                 },
                 payment_status: 'unpaid',
                 payment_status_label: getPaymentStatusLabel('unpaid'),
                 status: assignedStaff ? 'confirmed' : 'pending',
                 status_label: getStatusLabel(assignedStaff ? 'confirmed' : 'pending'),
+                estimation_status: 'pending',
                 service_date: data.service_date,
                 service_time: data.service_time,
                 auto_assigned: assignedStaff ? {
@@ -224,6 +426,270 @@ const createBookingController = async (req, res) => {
         res.status(500).json({ 
             success: false,
             message: 'Failed to create booking', 
+            error: error.message 
+        });
+    }
+};
+
+// ==================== ADMIN: UPDATE BOOKING ESTIMATION ====================
+
+const updateBookingEstimationController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            service_cost,
+            labor_cost,
+            transport_cost,
+            equipment_cost,
+            tax_rate,
+            discount
+        } = req.body;
+
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ message: 'Invalid booking ID' });
+        }
+
+        const booking = await getBookingById(id);
+        if (booking.length === 0) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        const serviceCost = parseFloat(service_cost) || 0;
+        const laborCost = parseFloat(labor_cost) || 0;
+        const transportCost = parseFloat(transport_cost) || 0;
+        const equipmentCost = parseFloat(equipment_cost) || 0;
+        const taxRate = parseFloat(tax_rate) || 0;
+        const discountAmount = parseFloat(discount) || 0;
+
+        const subtotal = serviceCost + laborCost + transportCost + equipmentCost;
+        const taxAmount = subtotal * (taxRate / 100);
+        const finalTotal = subtotal + taxAmount - discountAmount;
+
+        await updateBookingEstimation(id, {
+            estimated_service_cost: serviceCost,
+            labor_cost: laborCost,
+            transport_cost: transportCost,
+            equipment_cost_admin: equipmentCost,
+            tax_rate_admin: taxRate,
+            tax_amount_admin: taxAmount,
+            discount_admin: discountAmount,
+            final_total: finalTotal
+        });
+
+        res.json({
+            success: true,
+            message: 'Estimation saved successfully',
+            estimation: {
+                subtotal,
+                tax_rate: taxRate,
+                tax_amount: taxAmount,
+                discount: discountAmount,
+                final_total: finalTotal
+            }
+        });
+
+    } catch (error) {
+        console.error('Update estimation error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to update estimation', 
+            error: error.message 
+        });
+    }
+};
+
+// ==================== ADMIN: GENERATE AND SEND INVOICE ====================
+
+// ==================== ADMIN: GENERATE AND SEND INVOICE ====================
+
+const generateAndSendInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { due_date, notes } = req.body;
+
+        const booking = await getBookingById(id);
+        if (booking.length === 0) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        const b = booking[0];
+
+        if (b.estimation_status !== 'estimated') {
+            return res.status(400).json({ message: 'Please save estimation first before generating invoice' });
+        }
+
+        // Get service name
+        const serviceResult = await getServiceById(b.service_id);
+        const serviceName = serviceResult && serviceResult.length > 0 ? serviceResult[0].name : 'Cleaning Service';
+
+        // Ensure all values are proper numbers
+        const serviceCost = parseFloat(b.estimated_service_cost) || 0;
+        const laborCost = parseFloat(b.labor_cost) || 0;
+        const transportCost = parseFloat(b.transport_cost) || 0;
+        const equipmentCost = parseFloat(b.equipment_cost_admin) || 0;
+        const taxRate = parseFloat(b.tax_rate_admin) || 0;
+        const taxAmount = parseFloat(b.tax_amount_admin) || 0;
+        const discountAmount = parseFloat(b.discount_admin) || 0;
+        const totalAmount = parseFloat(b.final_total) || 0;
+
+        // Calculate subtotal properly
+        const subtotal = serviceCost + laborCost + transportCost + equipmentCost;
+
+        // Create invoice record
+        const invoiceResult = await createCustomerInvoice({
+            booking_id: id,
+            invoice_date: new Date().toISOString().split('T')[0],
+            due_date: due_date || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+            service_cost: serviceCost,
+            labor_cost: laborCost,
+            transport_cost: transportCost,
+            equipment_cost: equipmentCost,
+            subtotal: subtotal,
+            tax_rate: taxRate,
+            tax_amount: taxAmount,
+            discount_amount: discountAmount,
+            total_amount: totalAmount,
+            notes: notes || null,
+            created_by: req.user.id
+        });
+
+        const invoiceId = invoiceResult.insertId;
+        
+        // Get full invoice details
+        const invoice = await getCustomerInvoiceById(invoiceId);
+        if (!invoice || invoice.length === 0) {
+            throw new Error('Failed to retrieve invoice');
+        }
+        
+        // Generate PDF
+        const pdfPath = await generateInvoicePDF({
+            ...invoice[0],
+            service_name: serviceName,
+            first_name: b.first_name,
+            last_name: b.last_name,
+            email: b.email,
+            phone: b.phone,
+            address: b.address,
+            city: b.city,
+            service_date: b.service_date,
+            service_time: b.service_time
+        });
+        
+        await updateInvoicePdfPath(invoiceId, pdfPath);
+        
+        // Update booking
+        await updateInvoiceGenerated(id, pdfPath);
+        
+        // Send email to customer
+        if (b.user_id) {
+            await sendInvoiceEmail(b.user_id, {
+                invoice_number: invoice[0].invoice_number,
+                total_amount: totalAmount,
+                due_date: due_date || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Invoice generated and sent to customer',
+            invoice: {
+                id: invoiceId,
+                invoice_number: invoice[0].invoice_number,
+                total_amount: totalAmount,
+                pdf_url: `/api/bookings/invoices/${invoiceId}/download`
+            }
+        });
+
+    } catch (error) {
+        console.error('Generate invoice error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to generate invoice', 
+            error: error.message 
+        });
+    }
+};
+
+// ==================== CUSTOMER: GET MY INVOICES ====================
+
+const getMyInvoices = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const invoices = await getCustomerInvoicesByUserId(userId);
+
+        res.json({
+            success: true,
+            count: invoices.length,
+            invoices: invoices.map(inv => ({
+                id: inv.id,
+                invoice_number: inv.invoice_number,
+                service_name: inv.service_name,
+                service_date: inv.service_date,
+                total_amount: parseFloat(inv.total_amount),
+                status: inv.status,
+                invoice_date: inv.invoice_date,
+                due_date: inv.due_date,
+                pdf_url: `/api/bookings/invoices/${inv.id}/download`
+            }))
+        });
+
+    } catch (error) {
+        console.error('Get my invoices error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch invoices', 
+            error: error.message 
+        });
+    }
+};
+
+// ==================== CUSTOMER: DOWNLOAD INVOICE ====================
+
+const downloadCustomerInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const invoice = await getCustomerInvoiceById(id);
+        if (invoice.length === 0) {
+            return res.status(404).json({ message: 'Invoice not found' });
+        }
+
+        // Verify ownership
+        const booking = await getBookingById(invoice[0].booking_id);
+        if (booking[0].user_id !== userId && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        if (invoice[0].pdf_path && fs.existsSync(invoice[0].pdf_path)) {
+            return res.download(invoice[0].pdf_path, `Invoice_${invoice[0].invoice_number}.pdf`);
+        }
+
+        // Generate PDF if not exists
+        const serviceResult = await getServiceById(booking[0].service_id);
+        const serviceName = serviceResult && serviceResult.length > 0 ? serviceResult[0].name : 'Cleaning Service';
+        
+        const pdfPath = await generateInvoicePDF({
+            ...invoice[0],
+            service_name: serviceName,
+            first_name: booking[0].first_name,
+            last_name: booking[0].last_name,
+            email: booking[0].email,
+            phone: booking[0].phone,
+            address: booking[0].address,
+            city: booking[0].city,
+            service_date: booking[0].service_date,
+            service_time: booking[0].service_time
+        });
+        
+        await updateInvoicePdfPath(id, pdfPath);
+        res.download(pdfPath, `Invoice_${invoice[0].invoice_number}.pdf`);
+
+    } catch (error) {
+        console.error('Download invoice error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to download invoice', 
             error: error.message 
         });
     }
@@ -330,15 +796,25 @@ const getMyBookings = async (req, res) => {
                         frequency: b.frequency,
                         materials_provided: b.materials ? true : false,
                         property_type: b.property_type,
+                        property_type_detail: b.property_type_detail,
+                        bedrooms: b.bedrooms,
+                        bathrooms: b.bathrooms,
+                        dirt_level: b.dirt_level,
+                        cleaning_frequency: b.cleaning_frequency,
                         address: b.address,
+                        area_district: b.area_district,
                         city: b.city,
-                        landmark: b.landmark
+                        region: b.region,
+                        landmark: b.landmark,
+                        building_name: b.building_name,
+                        floor_number: b.floor_number
                     },
                     schedule: {
                         date: b.service_date,
                         time: b.service_time
                     },
                     instructions: b.instructions,
+                    special_instructions_cleaners: b.special_instructions_cleaners,
                     payment: {
                         method: b.payment_method,
                         base_price: parseFloat(b.base_price),
@@ -350,6 +826,7 @@ const getMyBookings = async (req, res) => {
                     },
                     status: b.status,
                     status_label: getStatusLabel(b.status),
+                    estimation_status: b.estimation_status,
                     assigned_staff: assignedStaffDetails,
                     created_at: b.created_at
                 };
@@ -392,6 +869,7 @@ const getAllBookingsController = async (req, res) => {
     try {
         const filters = {
             status: req.query.status,
+            estimation_status: req.query.estimation_status,
             payment_status: req.query.payment_status,
             date_from: req.query.date_from,
             date_to: req.query.date_to,
@@ -404,6 +882,7 @@ const getAllBookingsController = async (req, res) => {
         const bookings = await getAllBookings(filters);
         const countResult = await getBookingCount({ 
             status: req.query.status,
+            estimation_status: req.query.estimation_status,
             payment_status: req.query.payment_status,
             assigned_staff_id: req.query.assigned_staff_id
         });
@@ -430,7 +909,9 @@ const getAllBookingsController = async (req, res) => {
                     customer: {
                         name: `${b.first_name} ${b.last_name}`,
                         email: b.email,
-                        phone: b.phone
+                        phone: b.phone,
+                        alternative_phone: b.alternative_phone,
+                        preferred_communication: b.preferred_communication
                     },
                     service: {
                         id: b.service_id,
@@ -441,23 +922,36 @@ const getAllBookingsController = async (req, res) => {
                         cleaners: b.cleaners,
                         hours: b.hours,
                         frequency: b.frequency,
-                        materials_provided: b.materials
+                        materials_provided: b.materials,
+                        property_type: b.property_type,
+                        property_type_detail: b.property_type_detail,
+                        bedrooms: b.bedrooms,
+                        bathrooms: b.bathrooms,
+                        dirt_level: b.dirt_level,
+                        cleaning_frequency: b.cleaning_frequency
                     },
                     property: {
                         type: b.property_type,
                         address: b.address,
+                        area_district: b.area_district,
                         city: b.city,
-                        landmark: b.landmark
+                        region: b.region,
+                        landmark: b.landmark,
+                        building_name: b.building_name,
+                        floor_number: b.floor_number
                     },
                     location: {
                         latitude: b.latitude,
-                        longitude: b.longitude
+                        longitude: b.longitude,
+                        pin_latitude: b.pin_latitude,
+                        pin_longitude: b.pin_longitude
                     },
                     schedule: {
                         date: b.service_date,
                         time: b.service_time
                     },
                     instructions: b.instructions,
+                    special_instructions_cleaners: b.special_instructions_cleaners,
                     payment: {
                         method: b.payment_method,
                         base_price: parseFloat(b.base_price),
@@ -467,13 +961,25 @@ const getAllBookingsController = async (req, res) => {
                         payment_status: b.payment_status,
                         payment_status_label: getPaymentStatusLabel(b.payment_status)
                     },
+                    estimation: {
+                        estimated_service_cost: parseFloat(b.estimated_service_cost),
+                        labor_cost: parseFloat(b.labor_cost),
+                        transport_cost: parseFloat(b.transport_cost),
+                        equipment_cost: parseFloat(b.equipment_cost_admin),
+                        tax_rate: parseFloat(b.tax_rate_admin),
+                        tax_amount: parseFloat(b.tax_amount_admin),
+                        discount: parseFloat(b.discount_admin),
+                        final_total: parseFloat(b.final_total),
+                        status: b.estimation_status
+                    },
                     status: b.status,
                     status_label: getStatusLabel(b.status),
                     assigned_staff: b.assigned_staff_name ? {
                         id: b.assigned_staff_id,
                         name: b.assigned_staff_name
                     } : null,
-                    created_at: b.created_at
+                    created_at: b.created_at,
+                    invoice_generated_at: b.invoice_generated_at
                 };
             })
         );
@@ -484,6 +990,7 @@ const getAllBookingsController = async (req, res) => {
             count: bookings.length,
             filters_applied: {
                 status: req.query.status || 'all',
+                estimation_status: req.query.estimation_status || 'all',
                 payment_status: req.query.payment_status || 'all',
                 date_from: req.query.date_from || null,
                 date_to: req.query.date_to || null
@@ -562,30 +1069,45 @@ const getBookingDetails = async (req, res) => {
                 customer: {
                     name: `${b.first_name} ${b.last_name}`,
                     email: b.email,
-                    phone: b.phone
+                    phone: b.phone,
+                    alternative_phone: b.alternative_phone,
+                    preferred_communication: b.preferred_communication
                 },
                 service: serviceDetails,
                 cleaning_details: {
                     cleaners: b.cleaners,
                     hours: b.hours,
                     frequency: b.frequency,
-                    materials_provided: b.materials
+                    materials_provided: b.materials,
+                    property_type: b.property_type,
+                    property_type_detail: b.property_type_detail,
+                    bedrooms: b.bedrooms,
+                    bathrooms: b.bathrooms,
+                    dirt_level: b.dirt_level,
+                    cleaning_frequency: b.cleaning_frequency
                 },
                 property: {
                     type: b.property_type,
                     address: b.address,
+                    area_district: b.area_district,
                     city: b.city,
-                    landmark: b.landmark
+                    region: b.region,
+                    landmark: b.landmark,
+                    building_name: b.building_name,
+                    floor_number: b.floor_number
                 },
                 location: {
                     latitude: b.latitude,
-                    longitude: b.longitude
+                    longitude: b.longitude,
+                    pin_latitude: b.pin_latitude,
+                    pin_longitude: b.pin_longitude
                 },
                 schedule: {
                     date: b.service_date,
                     time: b.service_time
                 },
                 instructions: b.instructions,
+                special_instructions_cleaners: b.special_instructions_cleaners,
                 payment: {
                     method: b.payment_method,
                     base_price: parseFloat(b.base_price),
@@ -595,10 +1117,22 @@ const getBookingDetails = async (req, res) => {
                     payment_status: b.payment_status,
                     payment_status_label: getPaymentStatusLabel(b.payment_status)
                 },
+                estimation: {
+                    estimated_service_cost: parseFloat(b.estimated_service_cost),
+                    labor_cost: parseFloat(b.labor_cost),
+                    transport_cost: parseFloat(b.transport_cost),
+                    equipment_cost: parseFloat(b.equipment_cost_admin),
+                    tax_rate: parseFloat(b.tax_rate_admin),
+                    tax_amount: parseFloat(b.tax_amount_admin),
+                    discount: parseFloat(b.discount_admin),
+                    final_total: parseFloat(b.final_total),
+                    status: b.estimation_status
+                },
                 status: b.status,
                 status_label: getStatusLabel(b.status),
                 assigned_staff: staffDetails,
-                created_at: b.created_at
+                created_at: b.created_at,
+                invoice_generated_at: b.invoice_generated_at
             }
         });
 
@@ -854,6 +1388,9 @@ const getBookingStats = async (req, res) => {
         const cancelledBookings = await getBookingCount({ status: 'cancelled' });
         const paidBookings = await getBookingCount({ payment_status: 'paid' });
         const unpaidBookings = await getBookingCount({ payment_status: 'unpaid' });
+        const pendingEstimation = await getBookingCount({ estimation_status: 'pending' });
+        const estimated = await getBookingCount({ estimation_status: 'estimated' });
+        const invoiced = await getBookingCount({ estimation_status: 'invoiced' });
 
         res.json({
             success: true,
@@ -865,7 +1402,10 @@ const getBookingStats = async (req, res) => {
                 delivered: completedBookings[0].count,
                 cancelled: cancelledBookings[0].count,
                 paid: paidBookings[0].count,
-                unpaid: unpaidBookings[0].count
+                unpaid: unpaidBookings[0].count,
+                pending_estimation: pendingEstimation[0].count,
+                estimated: estimated[0].count,
+                invoiced: invoiced[0].count
             }
         });
 
@@ -879,7 +1419,7 @@ const getBookingStats = async (req, res) => {
     }
 };
 
-// ==================== CUSTOMER: GET RECEIPT (ENHANCED) ====================
+// ==================== CUSTOMER: GET RECEIPT ====================
 
 const getReceipt = async (req, res) => {
     try {
@@ -1129,5 +1669,9 @@ module.exports = {
     getBookingStats,
     getReceipt,
     cancelMyBooking,
-    getStaffAssignments
+    getStaffAssignments,
+    updateBookingEstimationController,
+    generateAndSendInvoice,
+    getMyInvoices,
+    downloadCustomerInvoice
 };
