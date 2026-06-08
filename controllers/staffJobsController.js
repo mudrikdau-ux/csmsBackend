@@ -379,6 +379,98 @@ const getJobHistory = async (req, res) => {
     }
 };
 
+
+// Get job details with issue status
+const getJobDetailsWithIssueStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const staffId = req.user.id;
+        
+        const sql = `
+            SELECT 
+                b.*,
+                s.name as service_name,
+                s.duration as service_duration,
+                s.description as service_description,
+                s.includes as service_includes,
+                s.price as service_price,
+                s.location as service_location,
+                (SELECT COUNT(*) FROM staff_issues WHERE booking_id = b.id AND staff_id = ? AND status IN ('pending', 'reviewed')) as has_pending_issue
+            FROM bookings b
+            LEFT JOIN services s ON b.service_id = s.id
+            WHERE b.id = ? AND b.assigned_staff_id = ?
+        `;
+        
+        const jobs = await db.query(sql, [staffId, id, staffId]);
+        
+        if (jobs.length === 0) {
+            return res.status(404).json({ message: 'Job not found or not assigned to you' });
+        }
+        
+        const job = jobs[0];
+        
+        res.json({
+            success: true,
+            job: {
+                id: job.id,
+                service: {
+                    id: job.service_id,
+                    name: job.service_name,
+                    price: parseFloat(job.service_price),
+                    duration: job.service_duration,
+                    location: job.service_location,
+                    description: job.service_description,
+                    includes: job.service_includes ? safeJSONParse(job.service_includes) : []
+                },
+                customer: {
+                    first_name: job.first_name,
+                    last_name: job.last_name,
+                    full_name: `${job.first_name} ${job.last_name}`,
+                    email: job.email,
+                    phone: job.phone
+                },
+                location: {
+                    address: job.address,
+                    city: job.city,
+                    landmark: job.landmark,
+                    latitude: job.latitude,
+                    longitude: job.longitude
+                },
+                schedule: {
+                    date: job.service_date,
+                    time: job.service_time
+                },
+                booking_details: {
+                    cleaners: job.cleaners,
+                    hours: job.hours,
+                    frequency: job.frequency,
+                    property_type: job.property_type,
+                    materials_provided: job.materials === 1,
+                    instructions: job.instructions
+                },
+                payment: {
+                    method: job.payment_method,
+                    total_price: parseFloat(job.total_price),
+                    payment_status: job.payment_status,
+                    base_price: parseFloat(job.base_price),
+                    extras: parseFloat(job.extras),
+                    discount: parseFloat(job.discount)
+                },
+                status: job.status,
+                status_label: getStatusLabel(job.status),
+                has_pending_issue: job.has_pending_issue === 1,
+                created_at: job.created_at,
+                completed_date: job.completed_date
+            }
+        });
+        
+    } catch (error) {
+        console.error('Get job details error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch job details', error: error.message });
+    }
+};
+
+
 // ==================== GET PERFORMANCE STATS ====================
 
 const getPerformanceStats = async (req, res) => {
@@ -491,9 +583,11 @@ const changeStaffPassword = async (req, res) => {
 };
 
 
+
 module.exports = {
     getAssignedJobs,
     getJobDetails,
+    getJobDetailsWithIssueStatus,
     updateJobStatus,
     getJobHistory,
     getPerformanceStats,

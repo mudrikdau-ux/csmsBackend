@@ -13,6 +13,7 @@ const adminChatRoutes = require('./routes/adminChatRoutes');
 const ratingRoutes = require('./routes/ratingRoutes');
 const adminStatsRoutes = require('./routes/adminStatsRoutes');
 const generalSupervisorRoutes = require('./routes/generalSupervisorRoutes');
+const staffIssueRoutes = require('./routes/staffIssueRoutes');
 
 // Middleware
 app.use(cors());
@@ -54,6 +55,7 @@ app.use('/api/admin/chats', adminChatRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/admin/stats', adminStatsRoutes);
 app.use('/api/general-supervisor', generalSupervisorRoutes);
+app.use('/api/staff-issues', staffIssueRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
