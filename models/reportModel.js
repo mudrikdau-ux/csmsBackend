@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// ==================== REPORT GENERATION ====================
+// ==================== REPORT CRUD ====================
 
 const saveReport = async (data) => {
     const sql = `
@@ -83,10 +83,8 @@ const getBookingStatsByDateRange = async (dateFrom, dateTo) => {
 };
 
 const getBookingTrends = async (dateFrom, dateTo) => {
-    // Daily trends
     const dailyTrends = await getBookingStatsByDateRange(dateFrom, dateTo);
 
-    // Weekly trends
     const weeklySql = `
         SELECT 
             YEARWEEK(created_at) as week,
@@ -104,7 +102,6 @@ const getBookingTrends = async (dateFrom, dateTo) => {
 
     const weeklyTrends = await db.query(weeklySql, [dateFrom, dateTo + ' 23:59:59']);
 
-    // Monthly trends
     const monthlySql = `
         SELECT 
             DATE_FORMAT(created_at, '%Y-%m') as month,
@@ -231,54 +228,223 @@ const getRevenueSummary = async (dateFrom, dateTo) => {
     return db.query(sql, [dateFrom, dateTo + ' 23:59:59']);
 };
 
-// ==================== STAFF PERFORMANCE ====================
+// ==================== STAFF REPORT (ALL STAFFS) ====================
 
-const getStaffPerformance = async (dateFrom, dateTo) => {
-    const sql = `
+const getStaffReportData = async (dateFrom, dateTo) => {
+    // Get all staff members with their personal details
+    const staffList = await db.query(`
         SELECT 
-            b.assigned_staff_id,
-            b.assigned_staff_name,
+            u.id,
+            u.first_name,
+            u.last_name,
+            u.email,
+            u.phone,
+            u.address,
+            u.gender,
             u.staff_type,
-            u.phone as staff_phone,
-            u.email as staff_email,
-            COUNT(*) as total_assignments,
-            SUM(CASE WHEN b.status = 'completed' THEN 1 ELSE 0 END) as completed_jobs,
-            SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_jobs,
-            SUM(b.total_price) as total_revenue_handled,
-            AVG(b.total_price) as avg_job_value,
-            AVG(CASE WHEN b.status = 'completed' THEN b.hours ELSE NULL END) as avg_hours_per_job
-        FROM bookings b
-        LEFT JOIN users u ON b.assigned_staff_id = u.id
-        WHERE b.created_at BETWEEN ? AND ?
-        AND b.assigned_staff_id IS NOT NULL
-        GROUP BY b.assigned_staff_id, b.assigned_staff_name, u.staff_type, u.phone, u.email
-        ORDER BY completed_jobs DESC
-    `;
+            u.photo,
+            u.created_at as joined_date,
+            u.rating as avg_rating,
+            u.total_ratings
+        FROM users u
+        WHERE u.role = 'staff'
+        ORDER BY u.first_name ASC
+    `);
 
-    return db.query(sql, [dateFrom, dateTo + ' 23:59:59']);
+    // Summary statistics
+    const summary = await db.query(`
+        SELECT 
+            COUNT(*) as total_staff,
+            SUM(CASE WHEN staff_type = 'supervisor' THEN 1 ELSE 0 END) as total_supervisors,
+            SUM(CASE WHEN staff_type = 'general_supervisor' THEN 1 ELSE 0 END) as total_general_supervisors,
+            SUM(CASE WHEN staff_type = 'normal' THEN 1 ELSE 0 END) as total_normal_staff,
+            ROUND(AVG(rating), 1) as average_rating,
+            SUM(total_ratings) as total_customer_ratings
+        FROM users
+        WHERE role = 'staff'
+    `);
+
+    // For each staff, get their job statistics
+    const staffWithDetails = await Promise.all(staffList.map(async (staff) => {
+        // Get job statistics within date range
+        const jobStats = await db.query(`
+            SELECT 
+                COUNT(*) as total_jobs,
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_jobs,
+                SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_jobs,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_jobs,
+                SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_jobs,
+                SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_jobs,
+                SUM(total_price) as total_revenue,
+                SUM(CASE WHEN payment_status = 'paid' THEN total_price ELSE 0 END) as collected_revenue,
+                SUM(CASE WHEN status = 'completed' AND payment_status = 'paid' THEN total_price * 0.02 ELSE 0 END) as total_earnings
+            FROM bookings
+            WHERE assigned_staff_id = ?
+            AND created_at BETWEEN ? AND ?
+        `, [staff.id, dateFrom, dateTo + ' 23:59:59']);
+
+        // Get current assignments
+        const currentAssignments = await db.query(`
+            SELECT 
+                b.id,
+                b.service_date,
+                b.service_time,
+                b.address,
+                b.city,
+                b.total_price,
+                b.status,
+                s.name as service_name,
+                CONCAT(b.first_name, ' ', b.last_name) as customer_name
+            FROM bookings b
+            LEFT JOIN services s ON b.service_id = s.id
+            WHERE b.assigned_staff_id = ? 
+            AND b.status IN ('confirmed', 'in_progress', 'pending')
+            AND b.created_at BETWEEN ? AND ?
+            ORDER BY b.service_date ASC
+            LIMIT 3
+        `, [staff.id, dateFrom, dateTo + ' 23:59:59']);
+
+        // Get recent completed jobs
+        const recentJobs = await db.query(`
+            SELECT 
+                b.id,
+                b.service_date,
+                b.completed_date,
+                b.total_price,
+                s.name as service_name,
+                CONCAT(b.first_name, ' ', b.last_name) as customer_name
+            FROM bookings b
+            LEFT JOIN services s ON b.service_id = s.id
+            WHERE b.assigned_staff_id = ? 
+            AND b.status = 'completed'
+            AND b.created_at BETWEEN ? AND ?
+            ORDER BY b.completed_date DESC
+            LIMIT 3
+        `, [staff.id, dateFrom, dateTo + ' 23:59:59']);
+
+        // Get rating summary
+        const ratingSummary = await db.query(`
+            SELECT 
+                COUNT(*) as total_ratings,
+                ROUND(AVG(satisfaction_rating), 1) as avg_satisfaction,
+                ROUND(AVG(punctuality_rating), 1) as avg_punctuality,
+                ROUND(AVG(cleanliness_rating), 1) as avg_cleanliness,
+                ROUND(AVG(average_rating), 1) as overall_rating
+            FROM staff_ratings
+            WHERE staff_id = ? AND status = 'approved'
+        `, [staff.id]);
+
+        return {
+            personal_info: {
+                id: staff.id,
+                first_name: staff.first_name,
+                last_name: staff.last_name,
+                full_name: `${staff.first_name} ${staff.last_name}`,
+                email: staff.email,
+                phone: staff.phone || 'Not provided',
+                address: staff.address || 'Not provided',
+                gender: staff.gender || 'Not specified',
+                staff_type: staff.staff_type || 'normal',
+                staff_type_label: staff.staff_type === 'supervisor' ? 'Supervisor' : 
+                                 staff.staff_type === 'general_supervisor' ? 'General Supervisor' : 'Staff',
+                joined_date: staff.joined_date,
+                photo: staff.photo ? `/uploads/staff/${staff.photo}` : null
+            },
+            job_statistics: {
+                total_jobs: parseInt(jobStats[0]?.total_jobs) || 0,
+                completed_jobs: parseInt(jobStats[0]?.completed_jobs) || 0,
+                in_progress_jobs: parseInt(jobStats[0]?.in_progress_jobs) || 0,
+                pending_jobs: parseInt(jobStats[0]?.pending_jobs) || 0,
+                confirmed_jobs: parseInt(jobStats[0]?.confirmed_jobs) || 0,
+                cancelled_jobs: parseInt(jobStats[0]?.cancelled_jobs) || 0,
+                completion_rate: jobStats[0]?.total_jobs > 0 
+                    ? Math.round((jobStats[0]?.completed_jobs / jobStats[0]?.total_jobs) * 100) 
+                    : 0,
+                total_revenue: parseFloat(jobStats[0]?.total_revenue) || 0,
+                collected_revenue: parseFloat(jobStats[0]?.collected_revenue) || 0,
+                total_earnings: parseFloat(jobStats[0]?.total_earnings) || 0
+            },
+            ratings: {
+                total_ratings: parseInt(ratingSummary[0]?.total_ratings) || 0,
+                average_satisfaction: parseFloat(ratingSummary[0]?.avg_satisfaction) || 0,
+                average_punctuality: parseFloat(ratingSummary[0]?.avg_punctuality) || 0,
+                average_cleanliness: parseFloat(ratingSummary[0]?.avg_cleanliness) || 0,
+                overall_rating: parseFloat(ratingSummary[0]?.overall_rating) || 0,
+                rating_label: getRatingLabel(parseFloat(ratingSummary[0]?.overall_rating) || 0)
+            },
+            current_assignments: currentAssignments.map(a => ({
+                id: a.id,
+                service_name: a.service_name,
+                customer_name: a.customer_name,
+                service_date: a.service_date,
+                service_time: a.service_time,
+                address: `${a.address}, ${a.city}`,
+                total_price: parseFloat(a.total_price),
+                status: a.status
+            })),
+            recent_jobs: recentJobs.map(j => ({
+                id: j.id,
+                service_name: j.service_name,
+                customer_name: j.customer_name,
+                service_date: j.service_date,
+                completed_date: j.completed_date,
+                total_price: parseFloat(j.total_price)
+            }))
+        };
+    }));
+
+    // Calculate totals across all staff
+    const totals = {
+        total_jobs: staffWithDetails.reduce((sum, s) => sum + s.job_statistics.total_jobs, 0),
+        total_completed_jobs: staffWithDetails.reduce((sum, s) => sum + s.job_statistics.completed_jobs, 0),
+        total_revenue: staffWithDetails.reduce((sum, s) => sum + s.job_statistics.total_revenue, 0),
+        total_earnings: staffWithDetails.reduce((sum, s) => sum + s.job_statistics.total_earnings, 0),
+        average_completion_rate: staffWithDetails.length > 0 
+            ? Math.round(staffWithDetails.reduce((sum, s) => sum + s.job_statistics.completion_rate, 0) / staffWithDetails.length)
+            : 0
+    };
+
+    // Staff by type distribution
+    const staffDistribution = {
+        labels: ['Supervisors', 'General Supervisors', 'Normal Staff'],
+        data: [summary[0]?.total_supervisors || 0, summary[0]?.total_general_supervisors || 0, summary[0]?.total_normal_staff || 0]
+    };
+
+    // Top performing staff
+    const topPerformers = [...staffWithDetails]
+        .sort((a, b) => b.job_statistics.completed_jobs - a.job_statistics.completed_jobs)
+        .slice(0, 5)
+        .map(s => ({
+            name: s.personal_info.full_name,
+            staff_type: s.personal_info.staff_type_label,
+            completed_jobs: s.job_statistics.completed_jobs,
+            completion_rate: s.job_statistics.completion_rate,
+            total_revenue: s.job_statistics.total_revenue,
+            rating: s.ratings.overall_rating
+        }));
+
+    return {
+        summary: {
+            total_staff: summary[0]?.total_staff || 0,
+            total_supervisors: summary[0]?.total_supervisors || 0,
+            total_general_supervisors: summary[0]?.total_general_supervisors || 0,
+            total_normal_staff: summary[0]?.total_normal_staff || 0,
+            average_rating: parseFloat(summary[0]?.average_rating || 0).toFixed(1),
+            total_customer_ratings: summary[0]?.total_customer_ratings || 0
+        },
+        totals,
+        staff_distribution: staffDistribution,
+        top_performers: topPerformers,
+        staff_list: staffWithDetails
+    };
 };
 
-const getTopPerformers = async (dateFrom, dateTo, limit = 10) => {
-    const sql = `
-        SELECT 
-            b.assigned_staff_id,
-            b.assigned_staff_name,
-            COUNT(*) as total_jobs,
-            SUM(CASE WHEN b.status = 'completed' THEN 1 ELSE 0 END) as completed,
-            ROUND(
-                (SUM(CASE WHEN b.status = 'completed' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 1
-            ) as completion_rate,
-            SUM(b.total_price) as revenue_generated
-        FROM bookings b
-        WHERE b.created_at BETWEEN ? AND ?
-        AND b.assigned_staff_id IS NOT NULL
-        GROUP BY b.assigned_staff_id, b.assigned_staff_name
-        HAVING COUNT(*) >= 1
-        ORDER BY completed DESC, completion_rate DESC
-        LIMIT ?
-    `;
-
-    return db.query(sql, [dateFrom, dateTo + ' 23:59:59', limit]);
+const getRatingLabel = (rating) => {
+    if (rating >= 4.5) return 'Excellent';
+    if (rating >= 3.5) return 'Good';
+    if (rating >= 2.5) return 'Average';
+    if (rating >= 1.5) return 'Below Average';
+    return 'Poor';
 };
 
 // ==================== CONTRACTOR ANALYTICS ====================
@@ -324,26 +490,13 @@ const getContractorExpiringSoon = async (daysThreshold = 30) => {
 const getComprehensiveReport = async (dateFrom, dateTo) => {
     const report = {};
 
-    // Booking summary
     report.booking_summary = await getRevenueSummary(dateFrom, dateTo);
-
-    // Revenue by service
     report.revenue_by_service = await getBookingByService(dateFrom, dateTo);
-
-    // Staff performance
-    report.staff_performance = await getStaffPerformance(dateFrom, dateTo);
-
-    // Contractor stats
     report.contractor_stats = await getContractorStats(dateFrom, dateTo);
-
-    // Status distribution
     report.status_distribution = await getBookingStatusDistribution(dateFrom, dateTo);
-
-    // Revenue by payment method
     report.revenue_by_payment = await getRevenueByPaymentMethod(dateFrom, dateTo);
-
-    // Location analysis
     report.location_analysis = await getBookingByLocation(dateFrom, dateTo);
+    report.staff_summary = await getStaffReportData(dateFrom, dateTo);
 
     return report;
 };
@@ -380,8 +533,7 @@ module.exports = {
     getRevenueStats,
     getRevenueByPaymentMethod,
     getRevenueSummary,
-    getStaffPerformance,
-    getTopPerformers,
+    getStaffReportData,
     getContractorStats,
     getContractorExpiringSoon,
     getComprehensiveReport,

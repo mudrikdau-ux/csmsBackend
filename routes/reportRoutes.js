@@ -9,7 +9,6 @@ const {
     downloadReport,
     getBookingAnalytics,
     getRevenueAnalytics,
-    getStaffAnalytics,
     getDashboardSummary
 } = require('../controllers/reportController');
 
@@ -17,28 +16,15 @@ const {
 router.use(verifyAdmin);
 
 // ==================== REPORT GENERATION ====================
-
-// Generate new report
 router.post('/generate', generateReport);
-
-// Get report history
 router.get('/history', getReportHistory);
-
-// Download report
 router.get('/download/:id', downloadReport);
 
 // ==================== ANALYTICS DASHBOARDS ====================
-
-// Dashboard summary
 router.get('/dashboard', getDashboardSummary);
-
-// Booking analytics with charts
 router.get('/bookings', getBookingAnalytics);
-
-// Revenue analytics with charts
 router.get('/revenue', getRevenueAnalytics);
 
-// Staff performance analytics
-router.get('/staff-performance', getStaffAnalytics);
+// staff_performance endpoint REMOVED - use staff_report type instead
 
 module.exports = router;
