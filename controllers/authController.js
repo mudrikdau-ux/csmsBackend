@@ -553,6 +553,7 @@ const resendAdminOTP = async (req, res) => {
 
 // ==================== STAFF LOGIN ====================
 
+// In staffLogin function - already exists, just ensure staff_type is included
 const staffLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -579,7 +580,7 @@ const staffLogin = async (req, res) => {
                 id: staff.id,
                 email: staff.email,
                 role: staff.role,
-                staff_type: staff.staff_type
+                staff_type: staff.staff_type  // Make sure this is included
             },
             process.env.JWT_SECRET,
             { expiresIn: '1d' }

@@ -130,6 +130,44 @@ INSERT INTO `bookings` VALUES (1,NULL,1,2,3,'weekly',1,'apartment','Kijitonyama 
 UNLOCK TABLES;
 
 --
+-- Table structure for table `cash_payments`
+--
+
+DROP TABLE IF EXISTS `cash_payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cash_payments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `booking_id` int NOT NULL,
+  `staff_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `amount_received` decimal(12,2) NOT NULL,
+  `change_amount` decimal(12,2) DEFAULT '0.00',
+  `payment_note` text,
+  `receipt_number` varchar(50) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `receipt_number` (`receipt_number`),
+  KEY `idx_booking_id` (`booking_id`),
+  KEY `idx_staff_id` (`staff_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_created_at` (`created_at`),
+  CONSTRAINT `cash_payments_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `cash_payments_ibfk_2` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `cash_payments_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `cash_payments`
+--
+
+LOCK TABLES `cash_payments` WRITE;
+/*!40000 ALTER TABLE `cash_payments` DISABLE KEYS */;
+/*!40000 ALTER TABLE `cash_payments` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `contact_inquiries`
 --
 
@@ -229,6 +267,7 @@ CREATE TABLE `contractors` (
   `company_name` varchar(255) NOT NULL,
   `contractor_type` enum('government','private') NOT NULL,
   `location` varchar(255) NOT NULL,
+  `location_address` text,
   `workers_count` int NOT NULL DEFAULT '0',
   `workers_names` text,
   `contract_start_date` date NOT NULL,
@@ -237,6 +276,7 @@ CREATE TABLE `contractors` (
   `contact_person` varchar(255) NOT NULL,
   `contact_email` varchar(150) NOT NULL,
   `contact_phone` varchar(20) NOT NULL,
+  `supervisor_id` int DEFAULT NULL,
   `services_provided` text,
   `status` enum('active','expired','terminated','completed') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -244,7 +284,9 @@ CREATE TABLE `contractors` (
   PRIMARY KEY (`id`),
   KEY `idx_contractor_type` (`contractor_type`),
   KEY `idx_status` (`status`),
-  KEY `idx_location` (`location`)
+  KEY `idx_location` (`location`),
+  KEY `contractor_supervisor_fk` (`supervisor_id`),
+  CONSTRAINT `contractor_supervisor_fk` FOREIGN KEY (`supervisor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -254,7 +296,7 @@ CREATE TABLE `contractors` (
 
 LOCK TABLES `contractors` WRITE;
 /*!40000 ALTER TABLE `contractors` DISABLE KEYS */;
-INSERT INTO `contractors` VALUES (1,'ZSSF - Zanzibar Social Security Fund','government','Mkunazini, Stone Town',15,'Ali Hassan, Fatma Omar, Juma Khamis, Maryam Saleh, Abdul Shakur, Zainab Ali, Hassan Juma, Khadija Mohammed, Said Hamad, Asha Bakari, Yusuf Mwinyi, Mwanajuma Ali, Rashid Khamis, Salma Abdallah, Mohammed Juma','2026-01-01','2026-12-31',25000000.00,'Ahmed Salim','ahmed.salim@zssf.go.tz','+255777123456','Office Cleaning, Window Washing, Floor Maintenance, Waste Management, Restroom Sanitation','active','2026-05-05 09:37:38','2026-05-05 09:37:38'),(2,'ZSSF - Zanzibar Social Security Fund','government','Mkunazini, Stone Town',15,'Ali Hassan, Fatma Omar, Juma Khamis, Maryam Saleh, Abdul Shakur, Zainab Ali, Hassan Juma, Khadija Mohammed, Said Hamad, Asha Bakari, Yusuf Mwinyi, Mwanajuma Ali, Rashid Khamis, Salma Abdallah, Mohammed Juma','2026-01-01','2026-12-31',25000000.00,'Ahmed Salim','ahmed.salim@zssf.go.tz','+255777123456','Office Cleaning, Window Washing, Floor Maintenance, Waste Management, Restroom Sanitation','active','2026-05-05 19:29:15','2026-05-05 19:29:15');
+INSERT INTO `contractors` VALUES (1,'ZSSF - Zanzibar Social Security Fund','government','Mkunazini, Stone Town','Mkunazini, Stone Town',15,'Ali Hassan, Fatma Omar, Juma Khamis, Maryam Saleh, Abdul Shakur, Zainab Ali, Hassan Juma, Khadija Mohammed, Said Hamad, Asha Bakari, Yusuf Mwinyi, Mwanajuma Ali, Rashid Khamis, Salma Abdallah, Mohammed Juma','2026-01-01','2026-12-31',25000000.00,'Ahmed Salim','ahmed.salim@zssf.go.tz','+255777123456',NULL,'Office Cleaning, Window Washing, Floor Maintenance, Waste Management, Restroom Sanitation','active','2026-05-05 09:37:38','2026-05-26 10:44:06'),(2,'ZSSF - Zanzibar Social Security Fund','government','Mkunazini, Stone Town','Mkunazini, Stone Town',15,'Ali Hassan, Fatma Omar, Juma Khamis, Maryam Saleh, Abdul Shakur, Zainab Ali, Hassan Juma, Khadija Mohammed, Said Hamad, Asha Bakari, Yusuf Mwinyi, Mwanajuma Ali, Rashid Khamis, Salma Abdallah, Mohammed Juma','2026-01-01','2026-12-31',25000000.00,'Ahmed Salim','ahmed.salim@zssf.go.tz','+255777123456',NULL,'Office Cleaning, Window Washing, Floor Maintenance, Waste Management, Restroom Sanitation','active','2026-05-05 19:29:15','2026-05-26 10:44:06');
 /*!40000 ALTER TABLE `contractors` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -495,6 +537,45 @@ LOCK TABLES `payments` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `payroll_records`
+--
+
+DROP TABLE IF EXISTS `payroll_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payroll_records` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `staff_id` int NOT NULL,
+  `contractor_id` int NOT NULL,
+  `week_ending_date` date NOT NULL,
+  `days_present` int NOT NULL DEFAULT '0',
+  `total_earned` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `status` enum('pending','approved','paid') DEFAULT 'pending',
+  `created_by` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_staff_id` (`staff_id`),
+  KEY `idx_contractor_id` (`contractor_id`),
+  KEY `idx_week_ending` (`week_ending_date`),
+  KEY `payroll_created_by_fk` (`created_by`),
+  CONSTRAINT `payroll_contractor_fk` FOREIGN KEY (`contractor_id`) REFERENCES `contractors` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `payroll_created_by_fk` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `payroll_staff_fk` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `payroll_records`
+--
+
+LOCK TABLES `payroll_records` WRITE;
+/*!40000 ALTER TABLE `payroll_records` DISABLE KEYS */;
+INSERT INTO `payroll_records` VALUES (1,20,1,'2026-05-29',1,10000.00,'pending',21,'2026-05-26 10:56:35','2026-05-26 10:56:35'),(2,21,1,'2026-05-29',1,10000.00,'pending',21,'2026-05-26 10:56:35','2026-05-26 10:56:35');
+/*!40000 ALTER TABLE `payroll_records` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `reports`
 --
 
@@ -626,6 +707,126 @@ INSERT INTO `services` VALUES (2,'Deep House Cleaning',25000.00,3,'Pemba Island'
 UNLOCK TABLES;
 
 --
+-- Table structure for table `staff_attendance`
+--
+
+DROP TABLE IF EXISTS `staff_attendance`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `staff_attendance` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `contractor_id` int NOT NULL,
+  `staff_id` int NOT NULL,
+  `attendance_date` date NOT NULL,
+  `is_present` tinyint(1) DEFAULT '0',
+  `daily_wage` decimal(10,2) DEFAULT '10000.00',
+  `marked_by` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_contractor_id` (`contractor_id`),
+  KEY `idx_staff_id` (`staff_id`),
+  KEY `idx_attendance_date` (`attendance_date`),
+  KEY `attendance_marked_by_fk` (`marked_by`),
+  CONSTRAINT `attendance_contractor_fk` FOREIGN KEY (`contractor_id`) REFERENCES `contractors` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `attendance_marked_by_fk` FOREIGN KEY (`marked_by`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `attendance_staff_fk` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `staff_attendance`
+--
+
+LOCK TABLES `staff_attendance` WRITE;
+/*!40000 ALTER TABLE `staff_attendance` DISABLE KEYS */;
+INSERT INTO `staff_attendance` VALUES (1,1,20,'2026-05-26',1,10000.00,21,'2026-05-26 10:56:35'),(2,1,21,'2026-05-26',1,10000.00,21,'2026-05-26 10:56:35');
+/*!40000 ALTER TABLE `staff_attendance` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `staff_rating_summary`
+--
+
+DROP TABLE IF EXISTS `staff_rating_summary`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `staff_rating_summary` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `staff_id` int NOT NULL,
+  `total_ratings` int NOT NULL DEFAULT '0',
+  `average_satisfaction` decimal(3,2) DEFAULT '0.00',
+  `average_punctuality` decimal(3,2) DEFAULT '0.00',
+  `average_cleanliness` decimal(3,2) DEFAULT '0.00',
+  `overall_average` decimal(3,2) DEFAULT '0.00',
+  `five_star_count` int DEFAULT '0',
+  `four_star_count` int DEFAULT '0',
+  `three_star_count` int DEFAULT '0',
+  `two_star_count` int DEFAULT '0',
+  `one_star_count` int DEFAULT '0',
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_staff_summary` (`staff_id`),
+  KEY `idx_overall_average` (`overall_average`),
+  CONSTRAINT `summary_staff_fk` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `staff_rating_summary`
+--
+
+LOCK TABLES `staff_rating_summary` WRITE;
+/*!40000 ALTER TABLE `staff_rating_summary` DISABLE KEYS */;
+/*!40000 ALTER TABLE `staff_rating_summary` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `staff_ratings`
+--
+
+DROP TABLE IF EXISTS `staff_ratings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `staff_ratings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `booking_id` int NOT NULL,
+  `customer_id` int NOT NULL,
+  `staff_id` int NOT NULL,
+  `satisfaction_rating` int NOT NULL,
+  `punctuality_rating` int NOT NULL,
+  `cleanliness_rating` int NOT NULL,
+  `average_rating` decimal(3,2) GENERATED ALWAYS AS ((((`satisfaction_rating` + `punctuality_rating`) + `cleanliness_rating`) / 3)) STORED,
+  `review_text` text,
+  `is_public` tinyint(1) DEFAULT '1',
+  `status` enum('pending','approved','rejected') DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_booking_rating` (`booking_id`),
+  KEY `idx_customer_id` (`customer_id`),
+  KEY `idx_staff_id` (`staff_id`),
+  KEY `idx_booking_id` (`booking_id`),
+  KEY `idx_average_rating` (`average_rating`),
+  KEY `idx_created_at` (`created_at`),
+  CONSTRAINT `rating_booking_fk` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `rating_customer_fk` FOREIGN KEY (`customer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `rating_staff_fk` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `staff_ratings_chk_1` CHECK ((`satisfaction_rating` between 1 and 5)),
+  CONSTRAINT `staff_ratings_chk_2` CHECK ((`punctuality_rating` between 1 and 5)),
+  CONSTRAINT `staff_ratings_chk_3` CHECK ((`cleanliness_rating` between 1 and 5))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `staff_ratings`
+--
+
+LOCK TABLES `staff_ratings` WRITE;
+/*!40000 ALTER TABLE `staff_ratings` DISABLE KEYS */;
+/*!40000 ALTER TABLE `staff_ratings` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `staff_service_assignments`
 --
 
@@ -659,6 +860,82 @@ INSERT INTO `staff_service_assignments` VALUES (1,20,2,'assigned','2026-04-29 14
 UNLOCK TABLES;
 
 --
+-- Table structure for table `supervisor_chats`
+--
+
+DROP TABLE IF EXISTS `supervisor_chats`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `supervisor_chats` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `supervisor_id` int NOT NULL,
+  `admin_id` int DEFAULT NULL,
+  `message` text NOT NULL,
+  `attachment_url` varchar(500) DEFAULT NULL,
+  `report_id` int DEFAULT NULL,
+  `is_read` tinyint(1) DEFAULT '0',
+  `sender_role` enum('supervisor','admin') NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_supervisor_id` (`supervisor_id`),
+  KEY `idx_admin_id` (`admin_id`),
+  KEY `idx_report_id` (`report_id`),
+  KEY `idx_created_at` (`created_at`),
+  CONSTRAINT `chat_admin_fk` FOREIGN KEY (`admin_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `chat_report_fk` FOREIGN KEY (`report_id`) REFERENCES `supervisor_reports` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `chat_supervisor_fk` FOREIGN KEY (`supervisor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `supervisor_chats`
+--
+
+LOCK TABLES `supervisor_chats` WRITE;
+/*!40000 ALTER TABLE `supervisor_chats` DISABLE KEYS */;
+INSERT INTO `supervisor_chats` VALUES (1,21,23,'? Weekly report for ZSSF - Zanzibar Social Security Fund (Week ending Sat May 30 2026 00:00:00 GMT+0300 (East Africa Time)) has been submitted.',NULL,1,0,'supervisor','2026-05-26 11:00:29'),(2,21,23,'Hello Admin, I have submitted the weekly report for ZSSF. Please review.',NULL,1,0,'supervisor','2026-05-26 11:01:06'),(3,21,23,'Here is the attendance report for this week\n','/uploads/chats/chat_1779793339597_371105600.png',1,0,'supervisor','2026-05-26 11:02:19');
+/*!40000 ALTER TABLE `supervisor_chats` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `supervisor_reports`
+--
+
+DROP TABLE IF EXISTS `supervisor_reports`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `supervisor_reports` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `contractor_id` int NOT NULL,
+  `week_ending_date` date NOT NULL,
+  `work_progress` text NOT NULL,
+  `worker_performance` text NOT NULL,
+  `equipment_status` text NOT NULL,
+  `additional_requests` text,
+  `report_pdf_path` varchar(500) DEFAULT NULL,
+  `submitted_by` int NOT NULL,
+  `submitted_to_admin` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_contractor_id` (`contractor_id`),
+  KEY `idx_week_ending` (`week_ending_date`),
+  KEY `report_submitted_by_fk` (`submitted_by`),
+  CONSTRAINT `report_contractor_fk` FOREIGN KEY (`contractor_id`) REFERENCES `contractors` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `report_submitted_by_fk` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `supervisor_reports`
+--
+
+LOCK TABLES `supervisor_reports` WRITE;
+/*!40000 ALTER TABLE `supervisor_reports` DISABLE KEYS */;
+INSERT INTO `supervisor_reports` VALUES (1,1,'2026-05-30','Completed deep cleaning of all 5 floors. Window washing done on floors 1-3. Restroom sanitation completed daily.','All staff performed excellently. Mohammed Ali completed 12 jobs this week with 100% satisfaction rate. Sarah Johnson showed great leadership.','Two vacuum cleaners need maintenance. Requesting 3 new mops and cleaning solution refill.','Need 2 additional staff for next week due to increased workload. Requesting supervisor training session.','C:\\Users\\mudri\\OneDrive\\Desktop\\cleaning serv\\backend\\reports\\supervisor\\weekly_report_ZSSF___Zanzibar_Social_Security_Fund_2026-05-29.pdf',21,1,'2026-05-26 10:58:42');
+/*!40000 ALTER TABLE `supervisor_reports` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `token_blacklist`
 --
 
@@ -675,7 +952,7 @@ CREATE TABLE `token_blacklist` (
   KEY `idx_token` (`token`(255)),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_expires_at` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -684,6 +961,7 @@ CREATE TABLE `token_blacklist` (
 
 LOCK TABLES `token_blacklist` WRITE;
 /*!40000 ALTER TABLE `token_blacklist` DISABLE KEYS */;
+INSERT INTO `token_blacklist` VALUES (4,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjEsImVtYWlsIjoiZm91cmJyb3RoZXJzQGdtYWlsLmNvbSIsInJvbGUiOiJzdGFmZiIsInN0YWZmX3R5cGUiOiJzdXBlcnZpc29yIiwiaWF0IjoxNzc5Nzg3MzEyLCJleHAiOjE3Nzk4NzM3MTJ9.CsNhHFbqX9c4Lu3U2dfo1koyu68SYt5S8jOREgjGsMk',21,'2026-05-27 12:21:52','2026-05-26 09:38:47'),(5,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjEsImVtYWlsIjoiZm91cmJyb3RoZXJzQGdtYWlsLmNvbSIsInJvbGUiOiJzdGFmZiIsInN0YWZmX3R5cGUiOiJzdXBlcnZpc29yIiwiaWF0IjoxNzc5NzkyNzQ5LCJleHAiOjE3Nzk4NzkxNDl9.3FKPTiXBO5Hl2r1i2GkTLBbJ9_HRVoHESa10bL2qq2k',21,'2026-05-27 13:52:29','2026-05-26 11:03:36');
 /*!40000 ALTER TABLE `token_blacklist` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -705,8 +983,6 @@ CREATE TABLE `users` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `otp` varchar(10) DEFAULT NULL,
   `otp_expiry` datetime DEFAULT NULL,
-  `reset_token` varchar(255) DEFAULT NULL,
-  `reset_token_expiry` datetime DEFAULT NULL,
   `role` varchar(20) DEFAULT 'user',
   `provider` varchar(10) DEFAULT 'local',
   `phone` varchar(20) DEFAULT NULL,
@@ -715,8 +991,15 @@ CREATE TABLE `users` (
   `photo` varchar(255) DEFAULT NULL,
   `profile_photo` varchar(255) DEFAULT NULL,
   `staff_type` enum('normal','supervisor') DEFAULT 'normal',
+  `rating` decimal(3,2) DEFAULT '5.00',
+  `reset_otp` varchar(10) DEFAULT NULL COMMENT 'OTP for password reset',
+  `reset_otp_expiry` datetime DEFAULT NULL COMMENT 'Expiry time for password reset OTP',
+  `total_ratings` int DEFAULT '0',
+  `avg_rating` decimal(3,2) DEFAULT '0.00',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
+  UNIQUE KEY `email` (`email`),
+  KEY `idx_reset_otp` (`reset_otp`),
+  KEY `idx_reset_otp_expiry` (`reset_otp_expiry`)
 ) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -726,7 +1009,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal'),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51',NULL,NULL,'staff','local','0677532140',1,1,'1777466934993.png',NULL,'normal'),(21,'Dau','','fourbrothers@gmail.com','$2b$10$.KVnJBfuPQi6iS/QN2wXzuceLtoem/g4hQVlKaogot24P.yVL45Si',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,NULL,NULL,'staff','local','0677532140',1,1,'1777466967528.png',NULL,'supervisor'),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i',NULL,NULL,'2026-05-14 09:17:28',NULL,NULL,NULL,NULL,'admin','local',NULL,0,1,NULL,NULL,'normal'),(24,'John','Doe','mudydau@icloud.com','$2b$10$1X3Y7rSZRjYppzx3JcJz0O8Uy/GKJAY2Z5eZJSRzx1iTIxvr9n13q','Kijitonyama Street','Male','2026-05-14 09:20:50',NULL,NULL,NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal'),(26,'MO','11','molittle1011@gmail.com','$2b$10$TpNnZbnO61lJjpIBC1XVmu8DH5hLkjADHOtrAwvs0tK4Art8E3ghK','Kijitonyama Street','Male','2026-05-14 13:13:47','165982','2026-05-25 16:22:32',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal');
+INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51','staff','local','0677532140',1,1,'1777466934993.png',NULL,'normal',5.00,NULL,NULL,0,0.00),(21,'Dau','','fourbrothers@gmail.com','$2b$10$57XdKCG64vJLMXh0bzPu2OPw0boCF6H6i5dm.ybP4Q5Oy3jraqjOW',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,'staff','local','0677532140',1,1,'1777466967528.png',NULL,'supervisor',5.00,NULL,NULL,0,0.00),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i',NULL,NULL,'2026-05-14 09:17:28',NULL,NULL,'admin','local',NULL,0,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(24,'John','Doe','mudydau@icloud.com','$2b$10$1X3Y7rSZRjYppzx3JcJz0O8Uy/GKJAY2Z5eZJSRzx1iTIxvr9n13q','Kijitonyama Street','Male','2026-05-14 09:20:50',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(26,'MO','11','molittle1011@gmail.com','$2b$10$Bxax9D8HmRNffnbrb9JTt.9BE.um6K8R4dX/4P8PnjXWbkRD9s2Z2','Kijitonyama Street','Male','2026-05-14 13:13:47','667106','2026-05-26 10:57:41','user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -739,4 +1022,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-26 10:31:36
+-- Dump completed on 2026-05-26 15:32:56

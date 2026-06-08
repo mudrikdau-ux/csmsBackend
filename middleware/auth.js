@@ -53,11 +53,20 @@ const verifyStaff = async (req, res, next) => {
 
 const verifySupervisor = async (req, res, next) => {
     await verifyToken(req, res, () => {
-        if (req.user.role !== 'staff' || req.user.staff_type !== 'supervisor') {
+        if (req.user.role !== 'staff' || (req.user.staff_type !== 'supervisor' && req.user.staff_type !== 'general_supervisor')) {
             return res.status(403).json({ message: 'Access denied. Supervisor only.' });
         }
         next();
     });
 };
 
-module.exports = { verifyToken, verifyAdmin, verifyStaff, verifySupervisor };
+const verifyGeneralSupervisor = async (req, res, next) => {
+    await verifyToken(req, res, () => {
+        if (req.user.role !== 'staff' || req.user.staff_type !== 'general_supervisor') {
+            return res.status(403).json({ message: 'Access denied. General Supervisor only.' });
+        }
+        next();
+    });
+};
+
+module.exports = { verifyToken, verifyAdmin, verifyStaff, verifySupervisor, verifyGeneralSupervisor };

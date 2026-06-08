@@ -287,17 +287,20 @@ const markReportSubmittedToAdmin = async (reportId) => {
 };
 
 // ==================== CHAT SYSTEM ====================
-
 const sendMessage = async (supervisorId, message, attachmentUrl = null, reportId = null) => {
     // Get admin user
     const admin = await db.query(`SELECT id FROM users WHERE role = 'admin' LIMIT 1`);
     const adminId = admin.length > 0 ? admin[0].id : null;
     
+    // Determine sender role based on user's staff_type
+    const user = await db.query(`SELECT staff_type FROM users WHERE id = ?`, [supervisorId]);
+    const senderRole = user.length > 0 && user[0].staff_type === 'general_supervisor' ? 'general_supervisor' : 'supervisor';
+    
     const result = await db.query(
         `INSERT INTO supervisor_chats 
          (supervisor_id, admin_id, message, attachment_url, report_id, sender_role)
-         VALUES (?, ?, ?, ?, ?, 'supervisor')`,
-        [supervisorId, adminId, message, attachmentUrl, reportId]
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [supervisorId, adminId, message, attachmentUrl, reportId, senderRole]
     );
     
     return { message_id: result.insertId };
