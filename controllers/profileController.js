@@ -272,18 +272,41 @@ const deleteLocation = async (req, res) => {
 const getSavedPaymentMethods = async (req, res) => {
     try {
         const methods = await db.query(
-            `SELECT * FROM saved_payment_methods WHERE user_id = ? ORDER BY is_default DESC, created_at DESC`,
+            `SELECT id, payment_type, card_last_four, mobile_number, bank_name, account_number, account_holder, is_default, created_at 
+             FROM saved_payment_methods 
+             WHERE user_id = ? 
+             ORDER BY is_default DESC, created_at DESC`,
             [req.user.id]
         );
-        res.json({ success: true, count: methods.length, payment_methods: methods });
+        
+        res.json({ 
+            success: true, 
+            count: methods.length, 
+            payment_methods: methods.map(m => ({
+                id: m.id,
+                payment_type: m.payment_type,
+                card_last_four: m.card_last_four,
+                mobile_number: m.mobile_number,
+                bank_name: m.bank_name,
+                account_number: m.account_number,
+                account_holder: m.account_holder || 'N/A',
+                is_default: m.is_default === 1,
+                created_at: m.created_at
+            }))
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Failed to fetch payment methods', error: error.message });
+        console.error('Get payment methods error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch payment methods', 
+            error: error.message 
+        });
     }
 };
 
 const addPaymentMethod = async (req, res) => {
     try {
-        const { payment_type, card_last_four, mobile_number, bank_name, account_number, is_default } = req.body;
+        const { payment_type, mobile_number, card_last_four, bank_name, account_number, account_holder, is_default } = req.body;
 
         if (!payment_type) {
             return res.status(400).json({ message: 'Payment type is required' });
@@ -294,14 +317,23 @@ const addPaymentMethod = async (req, res) => {
         }
 
         const result = await db.query(
-            `INSERT INTO saved_payment_methods (user_id, payment_type, card_last_four, mobile_number, bank_name, account_number, is_default) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [req.user.id, payment_type, card_last_four || null, mobile_number || null, bank_name || null, account_number || null, is_default ? 1 : 0]
+            `INSERT INTO saved_payment_methods (user_id, payment_type, mobile_number, card_last_four, bank_name, account_number, account_holder, is_default) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [req.user.id, payment_type, mobile_number || null, card_last_four || null, bank_name || null, account_number || null, account_holder || null, is_default ? 1 : 0]
         );
 
-        res.status(201).json({ success: true, message: 'Payment method saved', method_id: result.insertId });
+        res.status(201).json({ 
+            success: true, 
+            message: 'Payment method saved', 
+            method_id: result.insertId 
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Failed to save payment method', error: error.message });
+        console.error('Add payment method error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to save payment method', 
+            error: error.message 
+        });
     }
 };
 

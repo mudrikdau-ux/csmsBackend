@@ -1421,6 +1421,7 @@ const getBookingStats = async (req, res) => {
 
 // ==================== CUSTOMER: GET RECEIPT ====================
 
+// In bookingController.js, fix the getReceipt function
 const getReceipt = async (req, res) => {
     try {
         const { id } = req.params;
@@ -1443,39 +1444,62 @@ const getReceipt = async (req, res) => {
             });
         }
 
+        // FIX: Safely parse JSON for includes
+        let includesArray = [];
+        if (b.service_includes) {
+            try {
+                // If it's already a string, try to parse it
+                if (typeof b.service_includes === 'string') {
+                    includesArray = JSON.parse(b.service_includes);
+                } 
+                // If it's already an array, use it directly
+                else if (Array.isArray(b.service_includes)) {
+                    includesArray = b.service_includes;
+                }
+                // If it's a comma-separated string, split it
+                else if (typeof b.service_includes === 'string' && b.service_includes.includes(',')) {
+                    includesArray = b.service_includes.split(',').map(item => item.trim());
+                }
+                // Single string value
+                else if (typeof b.service_includes === 'string') {
+                    includesArray = [b.service_includes];
+                }
+            } catch (e) {
+                console.warn('Failed to parse includes:', e);
+                // If JSON parse fails, try to handle as comma-separated
+                if (typeof b.service_includes === 'string' && b.service_includes.includes(',')) {
+                    includesArray = b.service_includes.split(',').map(item => item.trim());
+                } else if (typeof b.service_includes === 'string') {
+                    includesArray = [b.service_includes];
+                }
+            }
+        }
+
         let serviceDetails = null;
         if (b.service_id) {
-            const serviceResult = await getServiceById(b.service_id);
-            if (serviceResult && serviceResult.length > 0) {
-                const s = serviceResult[0];
-                serviceDetails = {
-                    id: s.id,
-                    name: s.name,
-                    price: parseFloat(s.price),
-                    duration: s.duration,
-                    location: s.location,
-                    description: s.description,
-                    includes: s.includes ? JSON.parse(s.includes) : []
-                };
-            }
+            serviceDetails = {
+                id: b.service_id,
+                name: b.service_name || 'Unknown Service',
+                price: parseFloat(b.service_price) || 0,
+                duration: b.service_duration,
+                location: b.service_location,
+                description: b.service_description,
+                includes: includesArray  // Use the parsed array
+            };
         }
 
         let staffDetails = null;
         if (b.assigned_staff_id) {
-            const staffResult = await getStaffById(b.assigned_staff_id);
-            if (staffResult && staffResult.length > 0) {
-                const staff = staffResult[0];
-                staffDetails = {
-                    id: staff.id,
-                    full_name: `${staff.first_name} ${staff.last_name}`,
-                    first_name: staff.first_name,
-                    last_name: staff.last_name,
-                    email: staff.email,
-                    phone: staff.phone,
-                    staff_type: staff.staff_type,
-                    photo: staff.photo ? `${req.protocol}://${req.get('host')}/uploads/staff/${staff.photo}` : null
-                };
-            }
+            staffDetails = {
+                id: b.assigned_staff_id,
+                full_name: b.assigned_staff_name || `${b.staff_first_name || ''} ${b.staff_last_name || ''}`.trim(),
+                first_name: b.staff_first_name,
+                last_name: b.staff_last_name,
+                email: b.staff_email,
+                phone: b.staff_phone,
+                staff_type: b.staff_type,
+                photo: b.staff_photo ? `/uploads/staff/${b.staff_photo}` : null
+            };
         }
 
         res.json({
@@ -1495,26 +1519,25 @@ const getReceipt = async (req, res) => {
                     landmark: b.landmark,
                     service_date: b.service_date,
                     service_time: b.service_time,
-                    frequency: b.frequency
-                },
-                cleaning_details: {
+                    frequency: b.frequency,
                     cleaners: b.cleaners,
                     hours: b.hours,
                     materials_provided: b.materials ? 'Yes' : 'No',
                     instructions: b.instructions || 'None'
                 },
                 pricing: {
-                    base_price: parseFloat(b.base_price),
-                    extras: parseFloat(b.extras),
-                    discount: parseFloat(b.discount),
-                    total_price: parseFloat(b.total_price),
+                    base_price: parseFloat(b.base_price) || 0,
+                    extras: parseFloat(b.extras) || 0,
+                    discount: parseFloat(b.discount) || 0,
+                    total_price: parseFloat(b.total_price) || 0,
                     payment_method: b.payment_method,
                     payment_status: b.payment_status,
-                    payment_status_label: getPaymentStatusLabel(b.payment_status)
+                    payment_status_label: b.payment_status === 'paid' ? 'Paid ✅' : 'Unpaid ❌'
                 },
                 status: b.status,
                 status_label: getStatusLabel(b.status),
                 assigned_staff: staffDetails,
+                special_instructions_cleaners: b.special_instructions_cleaners,
                 created_at: b.created_at
             }
         });

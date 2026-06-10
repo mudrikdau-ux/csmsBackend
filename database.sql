@@ -741,7 +741,7 @@ CREATE TABLE `saved_locations` (
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   CONSTRAINT `saved_locations_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -750,6 +750,7 @@ CREATE TABLE `saved_locations` (
 
 LOCK TABLES `saved_locations` WRITE;
 /*!40000 ALTER TABLE `saved_locations` DISABLE KEYS */;
+INSERT INTO `saved_locations` VALUES (2,24,'Fuoni Kisimani','Fuoni Kisimani','Zanzibar',NULL,NULL,NULL,0,'2026-06-10 09:50:41'),(3,24,'Kiembesamaki','Kiembesamaki','Zanzibar',NULL,NULL,NULL,0,'2026-06-10 09:50:51');
 /*!40000 ALTER TABLE `saved_locations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -763,17 +764,18 @@ DROP TABLE IF EXISTS `saved_payment_methods`;
 CREATE TABLE `saved_payment_methods` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
-  `payment_type` enum('cash','card','mobile_money','bank_transfer') NOT NULL,
+  `payment_type` varchar(50) NOT NULL,
   `card_last_four` varchar(4) DEFAULT NULL,
   `mobile_number` varchar(20) DEFAULT NULL,
   `bank_name` varchar(100) DEFAULT NULL,
   `account_number` varchar(50) DEFAULT NULL,
   `is_default` tinyint(1) DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `account_holder` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   CONSTRAINT `saved_payment_methods_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -782,6 +784,7 @@ CREATE TABLE `saved_payment_methods` (
 
 LOCK TABLES `saved_payment_methods` WRITE;
 /*!40000 ALTER TABLE `saved_payment_methods` DISABLE KEYS */;
+INSERT INTO `saved_payment_methods` VALUES (4,24,'debit_card',NULL,'2222222',NULL,NULL,0,'2026-06-10 10:24:52','MO11'),(5,24,'mobile_money',NULL,'2222222',NULL,NULL,0,'2026-06-10 10:25:04','3243');
 /*!40000 ALTER TABLE `saved_payment_methods` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1101,7 +1104,7 @@ CREATE TABLE `token_blacklist` (
   KEY `idx_token` (`token`(255)),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_expires_at` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1110,7 +1113,7 @@ CREATE TABLE `token_blacklist` (
 
 LOCK TABLES `token_blacklist` WRITE;
 /*!40000 ALTER TABLE `token_blacklist` DISABLE KEYS */;
-INSERT INTO `token_blacklist` VALUES (4,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjEsImVtYWlsIjoiZm91cmJyb3RoZXJzQGdtYWlsLmNvbSIsInJvbGUiOiJzdGFmZiIsInN0YWZmX3R5cGUiOiJzdXBlcnZpc29yIiwiaWF0IjoxNzc5Nzg3MzEyLCJleHAiOjE3Nzk4NzM3MTJ9.CsNhHFbqX9c4Lu3U2dfo1koyu68SYt5S8jOREgjGsMk',21,'2026-05-27 12:21:52','2026-05-26 09:38:47'),(5,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjEsImVtYWlsIjoiZm91cmJyb3RoZXJzQGdtYWlsLmNvbSIsInJvbGUiOiJzdGFmZiIsInN0YWZmX3R5cGUiOiJzdXBlcnZpc29yIiwiaWF0IjoxNzc5NzkyNzQ5LCJleHAiOjE3Nzk4NzkxNDl9.3FKPTiXBO5Hl2r1i2GkTLBbJ9_HRVoHESa10bL2qq2k',21,'2026-05-27 13:52:29','2026-05-26 11:03:36');
+INSERT INTO `token_blacklist` VALUES (4,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjEsImVtYWlsIjoiZm91cmJyb3RoZXJzQGdtYWlsLmNvbSIsInJvbGUiOiJzdGFmZiIsInN0YWZmX3R5cGUiOiJzdXBlcnZpc29yIiwiaWF0IjoxNzc5Nzg3MzEyLCJleHAiOjE3Nzk4NzM3MTJ9.CsNhHFbqX9c4Lu3U2dfo1koyu68SYt5S8jOREgjGsMk',21,'2026-05-27 12:21:52','2026-05-26 09:38:47'),(5,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjEsImVtYWlsIjoiZm91cmJyb3RoZXJzQGdtYWlsLmNvbSIsInJvbGUiOiJzdGFmZiIsInN0YWZmX3R5cGUiOiJzdXBlcnZpc29yIiwiaWF0IjoxNzc5NzkyNzQ5LCJleHAiOjE3Nzk4NzkxNDl9.3FKPTiXBO5Hl2r1i2GkTLBbJ9_HRVoHESa10bL2qq2k',21,'2026-05-27 13:52:29','2026-05-26 11:03:36'),(6,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjMsImVtYWlsIjoibXVkcmlrZGF1QGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc4MTA4MDQ5OCwiZXhwIjoxNzgxNjg1Mjk4fQ.DiftLYEfAlgcQoN8JzXUPVwKEdBXmBWP96TJuNIV1CM',23,'2026-06-17 11:34:58','2026-06-10 09:02:48'),(7,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjMsImVtYWlsIjoibXVkcmlrZGF1QGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc4MTA4MjE4MiwiZXhwIjoxNzgxNjg2OTgyfQ.ItrLMS-q-hbpiUimHB0zGU0pdqalsqK32YaNLZWgV4k',23,'2026-06-17 12:03:02','2026-06-10 09:03:48'),(8,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjMsImVtYWlsIjoibXVkcmlrZGF1QGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc4MTA4MjM0NiwiZXhwIjoxNzgxNjg3MTQ2fQ.KJJ7__gC0aF0_d9pjN4I19mXUnmyfPvR5UX8hklDYaU',23,'2026-06-17 12:05:46','2026-06-10 09:40:52'),(9,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjQsImVtYWlsIjoibXVkeWRhdUBpY2xvdWQuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3ODEwODQ1NTQsImV4cCI6MTc4MTY4OTM1NH0.R21zc2OoVpAY7LWAUdzh-FHoV3Jc8Grc4Oijnq1XZUo',24,'2026-06-17 12:42:34','2026-06-10 09:48:56');
 /*!40000 ALTER TABLE `token_blacklist` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1149,7 +1152,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   KEY `idx_reset_otp` (`reset_otp`),
   KEY `idx_reset_otp_expiry` (`reset_otp_expiry`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1158,7 +1161,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51','staff','local','0677532140',1,1,'1777466934993.png',NULL,'normal',5.00,NULL,NULL,0,0.00),(21,'Dau','','fourbrothers@gmail.com','$2b$10$57XdKCG64vJLMXh0bzPu2OPw0boCF6H6i5dm.ybP4Q5Oy3jraqjOW',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,'staff','local','0677532140',1,1,'1777466967528.png',NULL,'supervisor',5.00,NULL,NULL,0,0.00),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i',NULL,NULL,'2026-05-14 09:17:28',NULL,NULL,'admin','local',NULL,0,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(24,'John','Doe','mudydau@icloud.com','$2b$10$1X3Y7rSZRjYppzx3JcJz0O8Uy/GKJAY2Z5eZJSRzx1iTIxvr9n13q','Kijitonyama Street','Male','2026-05-14 09:20:50',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(27,'MO','11','molittle1011@gmail.com','$2b$10$cmw3cq12kmrxJeFq4j.Vqecb47WOKAxJ/27oHyGQBHHeCBMMFZF/G','Fuoni Kisimani','Male','2026-05-26 13:53:18','613316','2026-05-26 17:23:26','user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(28,'DAU','Mudy','mudrikdau1@gmail.com','$2b$10$nzBbBA/b1UHDV1Rzi7aE5OSFqBOLdF.ssbtiQ4MDwXgNNxY/YK1PO',NULL,NULL,'2026-06-08 09:26:21',NULL,NULL,'staff','local','0777555777',1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(29,'DAU','Mudy','mudrikdau11@gmail.com','$2b$10$XUxuVqfDpgOa2bBkvNp6K.brdeHR397iF3cX3ifraC3oog27ENwAC',NULL,NULL,'2026-06-08 09:30:18',NULL,NULL,'staff','local','0777555777',1,1,NULL,NULL,'general_supervisor',5.00,NULL,NULL,0,0.00);
+INSERT INTO `users` VALUES (18,'Abdul','Shehe','fourbrothers10112627@gmail.com','$2b$10$iImtupDfwPb.ZQz8zIA.puEvtKkwNlCO9A4Ur1yvOXYTFXmh3Jhiy','Fuoni','Male','2026-04-29 12:00:09',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(20,'MO','11','msuasauasus@gmail.com','$2b$10$iOdZ1Batbn72vH2NAy0W9.5o8r7ZcUVQsFyEr1BKQgUX9mifxInSS',NULL,NULL,'2026-04-29 12:48:55','636923','2026-05-05 11:43:51','staff','local','0677532140',1,1,'1777466934993.png',NULL,'normal',5.00,NULL,NULL,0,0.00),(21,'Dau','','fourbrothers@gmail.com','$2b$10$57XdKCG64vJLMXh0bzPu2OPw0boCF6H6i5dm.ybP4Q5Oy3jraqjOW',NULL,NULL,'2026-04-29 12:49:27',NULL,NULL,'staff','local','0677532140',1,1,'1777466967528.png',NULL,'supervisor',5.00,NULL,NULL,0,0.00),(23,'Mudrik','Dau','mudrikdau@gmail.com','$2b$10$fYdzQ02XIACxinG7svIZz.sR5Q3.xNmVyeBH0ZQ0DlQDnMA5cJP3i','Maungani Zanzibar','Male','2026-05-14 09:17:28',NULL,NULL,'admin','local','0677532140',1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(24,'Mudy','Dau','mudydau@icloud.com','$2b$10$9Irje0C9VPyjiwQYTLe0PuGpAtHpDAiDn4zTpmOOBuZk3Xc7FVTmS','Maungani Zanzibar','Male','2026-05-14 09:20:50',NULL,NULL,'user','local','+255 777 123 456',1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(27,'MO','11','molittle1011@gmail.com','$2b$10$cmw3cq12kmrxJeFq4j.Vqecb47WOKAxJ/27oHyGQBHHeCBMMFZF/G','Fuoni Kisimani','Male','2026-05-26 13:53:18','613316','2026-05-26 17:23:26','user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(28,'DAU','Mudy','mudrikdau1@gmail.com','$2b$10$nzBbBA/b1UHDV1Rzi7aE5OSFqBOLdF.ssbtiQ4MDwXgNNxY/YK1PO',NULL,NULL,'2026-06-08 09:26:21',NULL,NULL,'staff','local','0777555777',1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(29,'DAU','Mudy','mudrikdau11@gmail.com','$2b$10$XUxuVqfDpgOa2bBkvNp6K.brdeHR397iF3cX3ifraC3oog27ENwAC',NULL,NULL,'2026-06-08 09:30:18',NULL,NULL,'staff','local','0777555777',1,1,NULL,NULL,'general_supervisor',5.00,NULL,NULL,0,0.00),(30,'Rashid','Dodo','rsrashid078@gmail.com','$2b$10$Ey5JadQUYjE.BG56Qs6PuOMP5xgdQj9gsiu2azGlbwyXuwKG9ARnW','Meli 4','Male','2026-06-08 13:31:44',NULL,NULL,'user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00),(31,'juma','DEW','suadothman56@gmail.com','$2b$10$NEZh62StQDLNjmHGnuLNHOcw0l58KyKq8NHl3zfyuH0ENHjE9d4oO','Fuoni Kisimani','Female','2026-06-08 16:46:05','755147','2026-06-08 19:51:06','user','local',NULL,1,1,NULL,NULL,'normal',5.00,NULL,NULL,0,0.00);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -1171,4 +1174,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-08 16:01:11
+-- Dump completed on 2026-06-10 13:26:57
