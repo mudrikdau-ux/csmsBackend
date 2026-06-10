@@ -3,24 +3,19 @@ const pool = require('../config/db').pool;
 
 // ==================== USER OPERATIONS ====================
 
+// In userModel.js - Update createUser function
 const createUser = async (userData) => {
-    const sql = `
-        INSERT INTO users 
-        (first_name, last_name, email, password, address, gender, role, provider)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    return db.query(sql, [
-        userData.first_name,
-        userData.last_name,
-        userData.email,
-        userData.password,
-        userData.address,
-        userData.gender,
-        userData.role || 'user',
-        'local'
-    ]);
+    const { first_name, last_name, email, password, address, gender, phone, role = 'user' } = userData;
+    
+    const result = await db.query(
+        `INSERT INTO users (first_name, last_name, email, password, address, gender, phone, role, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [first_name, last_name, email, password, address, gender, phone || null, role]
+    );
+    
+    return result;
 };
+
 
 const createGoogleUser = async (userData) => {
     const sql = `

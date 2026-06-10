@@ -31,9 +31,18 @@ const {
 
 // ==================== REGISTER USER ====================
 
+// In authController.js - Update registerUser function
 const registerUser = async (req, res) => {
     try {
-        const { first_name, last_name, email, password, address, gender } = req.body;
+        const { first_name, last_name, email, password, address, gender, phone } = req.body;
+
+        // Validate required fields
+        if (!first_name || !last_name || !email || !password || !address || !gender) {
+            return res.status(400).json({ 
+                message: 'All fields are required',
+                required: ['first_name', 'last_name', 'email', 'password', 'address', 'gender']
+            });
+        }
 
         const existingUser = await findUserByEmail(email);
         if (existingUser.length > 0) {
@@ -52,6 +61,7 @@ const registerUser = async (req, res) => {
             password: hashedPassword,
             address,
             gender,
+            phone: phone || null,  // Add phone number
             role: 'user'
         });
 

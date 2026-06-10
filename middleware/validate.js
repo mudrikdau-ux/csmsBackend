@@ -1,3 +1,4 @@
+// In validate.js - Update validateRegister function
 const validateRegister = (req, res, next) => {
     const {
         first_name,
@@ -6,7 +7,8 @@ const validateRegister = (req, res, next) => {
         password,
         confirm_password,
         address,
-        gender
+        gender,
+        phone
     } = req.body;
 
     // Check required fields
@@ -30,6 +32,14 @@ const validateRegister = (req, res, next) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    // Validate phone (optional but if provided, validate format)
+    if (phone && phone.length > 0) {
+        const phoneRegex = /^[\+\d][\d\s\-\(\)]{9,20}$/;
+        if (!phoneRegex.test(phone)) {
+            return res.status(400).json({ message: 'Invalid phone number format' });
+        }
     }
 
     // Validate password strength
